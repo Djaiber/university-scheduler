@@ -1,0 +1,28 @@
+# Node
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.npm/
+# CDK
+cdk.out/
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+# Entorno y secretos
+.env
+.env.*
+!.env.example
+# Editor / SO
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+# Artefactos de ejecución
+benchmarks/out/
+*.log
