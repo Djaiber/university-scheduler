@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Rechaza commits sin clave Jira SCRUM-<n> al inicio del mensaje.
+msg_file="$1"
+first_line=$(head -n1 "$msg_file")
+if [[ "$first_line" =~ ^(Merge|Revert|fixup!|squash!) ]]; then exit 0; fi
+if [[ ! "$first_line" =~ ^SCRUM-[0-9]+[[:space:]] ]]; then
+  echo "✖ El mensaje debe empezar con la clave Jira, p. ej.: 'SCRUM-12 feat(api): ...'" >&2
+  exit 1
+fi
