@@ -1,0 +1,25 @@
+flowchart LR
+  subgraph Cliente
+    WEB[Panel React]
+  end
+  subgraph AWS
+    COG[Cognito]
+    API[API NestJS<br/>ECS Fargate]
+    RDS[(RDS PostgreSQL)]
+    S3[(S3<br/>imports / exports)]
+    Q[[SQS optimization-jobs]]
+    DLQ[[SQS DLQ]]
+    W[Worker Python<br/>CP-SAT + validador]
+    CW[CloudWatch]
+  end
+  WEB -->|JWT| API
+  WEB --> COG
+  API --> RDS
+  API --> S3
+  API -->|mensaje v1| Q
+  Q -->|maxReceiveCount=3| DLQ
+  Q --> W
+  W --> RDS
+  W --> S3
+  API -.logs/métricas.-> CW
+  W -.logs/métricas.-> CW
