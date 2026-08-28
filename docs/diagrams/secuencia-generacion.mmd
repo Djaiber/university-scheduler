@@ -1,0 +1,18 @@
+sequenceDiagram
+  actor C as Coordinador
+  participant API
+  participant DB as PostgreSQL
+  participant Q as SQS
+  participant W as Worker
+  participant V as Validador
+  C->>API: POST /schedule-requests
+  API->>DB: snapshot (datos+reglas, hash) + run QUEUED
+  API->>Q: SendMessage {run_id, idempotency_key}
+  API-->>C: 202 Accepted {run_id}
+  W->>Q: ReceiveMessage
+  W->>DB: UPDATE run SET SOLVING WHERE status=QUEUED
+  W->>W: CP-SAT × N alternativas
+  W->>V: validar cada alternativa
+  W->>DB: alternativas + métricas, run PENDING_REVIEW | INFEASIBLE | FAILED
+  W->>Q: DeleteMessage
+  C->>API: GET /runs/{id} (sondeo)
