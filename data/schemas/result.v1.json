@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://university-scheduler/schemas/result.v1.json",
+  "title": "Resultado de optimización v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "problem_id", "status", "solver_version", "duration_ms", "alternatives"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "run_id": { "type": "string" },
+    "problem_id": { "type": "string" },
+    "status": {
+      "enum": ["COMPLETED", "PARTIAL", "INFEASIBLE", "TIMEOUT", "INVALID_INPUT", "FAILED"],
+      "description": "COMPLETED: todas las alternativas pedidas; PARTIAL: al menos una; TIMEOUT: ninguna en el presupuesto (no prueba inviabilidad)"
+    },
+    "solver_version": { "type": "string" },
+    "duration_ms": { "type": "integer", "minimum": 0 },
+    "alternatives": { "type": "array", "maxItems": 4, "items": { "$ref": "#/$defs/alternative" } },
+    "diagnostics": { "$ref": "#/$defs/diagnostics" },
+    "error": { "$ref": "#/$defs/error" }
+  },
+  "$defs": {
+    "assignment": {
+      "type": "object", "additionalProperties": false,
+      "required": ["group", "session", "slot", "room"],
+      "properties": {
+        "group": { "type": "string" },
+        "session": { "type": "integer", "minimum": 0 },
+        "slot": { "type": "string" },
+        "room": { "type": "string" }
+      }
+    },
+    "violation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["rule", "message"],
+      "properties": {
+        "rule": { "type": "string" },
+        "message": { "type": "string" },
+        "entities": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "validation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["valid", "hard_violations", "soft_penalty", "soft_breakdown"],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "validator_version": { "type": "string" },
+        "hard_violations": { "type": "array", "items": { "$ref": "#/$defs/violation" } },
+        "soft_penalty": { "type": "number", "minimum": 0 },
+        "soft_breakdown": { "type": "object", "additionalProperties": { "type": "number" } }
+      }
+    },
+    "alternative": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ordinal", "profile", "solver_status", "objective_value", "assignments", "validation", "metrics"],
+      "properties": {
+        "ordinal": { "type": "integer", "minimum": 1, "maximum": 4 },
+        "profile": { "type": "string" },
+        "seed": { "type": "integer" },
+        "solver_status": { "enum": ["OPTIMAL", "FEASIBLE"] },
+        "objective_value": { "type": "number" },
+        "assignments": { "type": "array", "items": { "$ref": "#/$defs/assignment" } },
+        "validation": { "$ref": "#/$defs/validation" },
+        "metrics": { "type": "object" }
+      }
+    },
+    "diagnostics": {
+      "type": "object",
+      "properties": {
+        "precheck": { "type": "array", "items": { "$ref": "#/$defs/violation" } },
+        "attempts": { "type": "array", "items": { "type": "object" } },
+        "pairwise_diversity": { "type": "array", "items": { "type": "array", "items": { "type": "number" } } }
+      }
+    },
+    "error": {
+      "type": "object", "additionalProperties": false,
+      "required": ["code", "message", "retryable"],
+      "properties": {
+        "code": { "type": "string" },
+        "message": { "type": "string" },
+        "retryable": { "type": "boolean" },
+        "details": {}
+      }
+    }
+  }
+}
