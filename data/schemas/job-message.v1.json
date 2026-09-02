@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://university-scheduler/schemas/job-message.v1.json",
+  "title": "Mensaje de trabajo de optimización v1 (SQS)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "message_id", "run_id", "request_id", "idempotency_key", "snapshot", "parameters", "enqueued_at"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "message_id": { "type": "string", "format": "uuid" },
+    "run_id": { "type": "string", "format": "uuid" },
+    "request_id": { "type": "string", "format": "uuid" },
+    "idempotency_key": { "type": "string", "pattern": "^[0-9a-f-]{36}:[0-9]+$", "description": "request_id:attempt" },
+    "snapshot": {
+      "type": "object", "additionalProperties": false,
+      "required": ["snapshot_id", "content_sha256"],
+      "properties": {
+        "snapshot_id": { "type": "string", "format": "uuid" },
+        "content_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "problem_uri": { "type": "string", "description": "s3://… si el problema no viaja en línea" }
+      }
+    },
+    "parameters": {
+      "type": "object", "additionalProperties": false,
+      "required": ["alternatives_requested", "optimization_profile", "time_limit_seconds"],
+      "properties": {
+        "alternatives_requested": { "type": "integer", "minimum": 1, "maximum": 4 },
+        "optimization_profile": { "enum": ["balanced", "teacher_friendly", "compact", "room_efficient"] },
+        "time_limit_seconds": { "type": "integer", "minimum": 5, "maximum": 3600 },
+        "min_diversity": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.3 },
+        "seed": { "type": "integer", "minimum": 0, "default": 0 },
+        "workers": { "type": "integer", "minimum": 1, "maximum": 16, "default": 4 }
+      }
+    },
+    "enqueued_at": { "type": "string", "format": "date-time" }
+  }
+}
