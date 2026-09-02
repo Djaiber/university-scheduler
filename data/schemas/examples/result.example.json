@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "run_id": "9f1c2a3b-4d5e-4f60-8a7b-1c2d3e4f5a6b",
+  "problem_id": "tiny-001",
+  "status": "PARTIAL",
+  "solver_version": "scheduler-optimizer 0.1.0 / ortools 9.x",
+  "duration_ms": 842,
+  "alternatives": [
+    {
+      "ordinal": 1, "profile": "balanced", "seed": 7, "solver_status": "OPTIMAL", "objective_value": 4,
+      "assignments": [
+        { "group": "CAL1-A", "session": 0, "slot": "MON-1", "room": "R1" },
+        { "group": "CAL1-A", "session": 1, "slot": "TUE-1", "room": "R1" },
+        { "group": "PRG1-A", "session": 0, "slot": "MON-0", "room": "LAB1" },
+        { "group": "PRG1-A", "session": 1, "slot": "TUE-0", "room": "LAB1" }
+      ],
+      "validation": { "valid": true, "validator_version": "0.1.0", "hard_violations": [], "soft_penalty": 4, "soft_breakdown": { "S2_EDGE_SLOT": 4 } },
+      "metrics": { "rooms_used": 2 }
+    }
+  ],
+  "diagnostics": { "precheck": [], "attempts": [] }
+}
