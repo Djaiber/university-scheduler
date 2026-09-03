@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://university-scheduler/schemas/problem.v1.json",
+  "title": "Problema de horarios v1",
+  "description": "Entrada canónica del solver y del validador. Los identificadores son códigos estables.",
+  "type": "object",
+  "required": ["schema_version", "problem_id", "period", "slots", "teachers", "rooms", "groups", "rules"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "problem_id": { "type": "string", "minLength": 1 },
+    "period": { "type": "string", "pattern": "^[0-9]{4}-[12]$" },
+    "slots": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "day", "index"],
+        "properties": {
+          "id": { "type": "string" },
+          "day": { "type": "integer", "minimum": 1, "maximum": 7 },
+          "index": { "type": "integer", "minimum": 0, "description": "orden de la franja dentro del día" },
+          "edge": { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "teachers": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["id"],
+        "properties": {
+          "id": { "type": "string" },
+          "unavailable": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+          "not_preferred": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+        }
+      }
+    },
+    "rooms": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["id", "capacity"],
+        "properties": {
+          "id": { "type": "string" },
+          "capacity": { "type": "integer", "minimum": 1 },
+          "features": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+          "unavailable": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+        }
+      }
+    },
+    "groups": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "course", "teacher", "cohort", "size", "sessions"],
+        "properties": {
+          "id": { "type": "string" },
+          "course": { "type": "string" },
+          "teacher": { "type": "string" },
+          "cohort": { "type": "string" },
+          "size": { "type": "integer", "minimum": 1 },
+          "sessions": { "type": "integer", "minimum": 1, "maximum": 6 },
+          "features": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+        }
+      }
+    },
+    "rules": { "$ref": "#/$defs/rules" }
+  },
+  "$defs": {
+    "rules": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version"],
+      "properties": {
+        "version": { "type": "integer", "minimum": 1 },
+        "hard": {
+          "type": "object",
+          "description": "Reglas duras opcionales; las demás H1–H8 siempre aplican",
+          "properties": { "H9_SAME_COURSE_SAME_DAY": { "type": "boolean", "default": true } },
+          "additionalProperties": false
+        },
+        "soft_weights": {
+          "type": "object",
+          "properties": {
+            "S1_TEACHER_PREFERENCE": { "type": "integer", "minimum": 0 },
+            "S2_EDGE_SLOT": { "type": "integer", "minimum": 0 },
+            "S3_ROOM_WASTE": { "type": "integer", "minimum": 0 },
+            "S4_COHORT_DAY_LOAD": { "type": "integer", "minimum": 0 }
+          },
+          "additionalProperties": false
+        },
+        "max_daily_sessions_per_cohort": { "type": "integer", "minimum": 1, "default": 3 }
+      }
+    }
+  }
+}

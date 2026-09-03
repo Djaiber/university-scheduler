@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "message_id": "4b7e7a52-6d0c-4f6e-9f43-0a3d1f2b9c10",
+  "run_id": "9f1c2a3b-4d5e-4f60-8a7b-1c2d3e4f5a6b",
+  "request_id": "0f6b0c47-2a43-4f0b-9d55-7d3b8a1e2c90",
+  "idempotency_key": "0f6b0c47-2a43-4f0b-9d55-7d3b8a1e2c90:1",
+  "snapshot": {
+    "snapshot_id": "5c2d9a8e-1b3f-4e6a-9c7d-2e1f0a9b8c7d",
+    "content_sha256": "3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b"
+  },
+  "parameters": { "alternatives_requested": 4, "optimization_profile": "balanced", "time_limit_seconds": 120, "min_diversity": 0.3, "seed": 7 },
+  "enqueued_at": "2026-09-02T15:04:05Z"
+}

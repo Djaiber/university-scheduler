@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "problem_id": "tiny-001",
+  "period": "2027-1",
+  "slots": [
+    { "id": "MON-0", "day": 1, "index": 0, "edge": true },
+    { "id": "MON-1", "day": 1, "index": 1 },
+    { "id": "TUE-0", "day": 2, "index": 0, "edge": true },
+    { "id": "TUE-1", "day": 2, "index": 1 }
+  ],
+  "teachers": [
+    { "id": "T1", "not_preferred": ["MON-0"] },
+    { "id": "T2", "unavailable": ["TUE-1"] }
+  ],
+  "rooms": [
+    { "id": "R1", "capacity": 40, "features": ["projector"] },
+    { "id": "LAB1", "capacity": 25, "features": ["lab", "projector"] }
+  ],
+  "groups": [
+    { "id": "CAL1-A", "course": "CAL1", "teacher": "T1", "cohort": "SIS-1", "size": 35, "sessions": 2 },
+    { "id": "PRG1-A", "course": "PRG1", "teacher": "T2", "cohort": "SIS-1", "size": 22, "sessions": 2, "features": ["lab"] }
+  ],
+  "rules": {
+    "version": 1,
+    "hard": { "H9_SAME_COURSE_SAME_DAY": true },
+    "soft_weights": { "S1_TEACHER_PREFERENCE": 5, "S2_EDGE_SLOT": 2, "S3_ROOM_WASTE": 1, "S4_COHORT_DAY_LOAD": 3 },
+    "max_daily_sessions_per_cohort": 3
+  }
+}

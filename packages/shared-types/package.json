@@ -1,0 +1,16 @@
+{
+  "name": "@us/shared-types",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "json-schema-to-typescript": "^15.0.0",
+    "typescript": "^5.6.0"
+  }
+}
