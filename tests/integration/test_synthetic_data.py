@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -9,6 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("generate", ROOT / "data" / "generator" / "generate.py")
 generate = importlib.util.module_from_spec(spec)
+sys.modules["generate"] = generate  # requerido por @dataclass al cargar por ruta
 spec.loader.exec_module(generate)
 
 
