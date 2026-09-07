@@ -1,0 +1,9 @@
+code,course_code,teacher_code,cohort,size,sessions_per_week,required_features
+C101-A,C101,T004,SIS-1A,20,2,
+C102-A,C102,T003,SIS-1A,24,2,lab
+C103-A,C103,T005,SIS-1A,39,2,
+C104-A,C104,T001,SIS-1A,23,2,
+C201-A,C201,T002,SIS-2A,20,2,lab
+C202-A,C202,T004,SIS-2A,22,2,lab
+C203-A,C203,T003,SIS-2A,27,2,lab
+C204-A,C204,T005,SIS-2A,29,2,

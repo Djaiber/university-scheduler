@@ -1,0 +1,3 @@
+code,day_of_week,starts_at,ends_at,is_edge
+MON-0,1,07:00,09:00,true
+MON-1,1,09:00,11:00,false

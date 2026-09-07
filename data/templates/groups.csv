@@ -1,0 +1,3 @@
+code,course_code,teacher_code,cohort,size,sessions_per_week,required_features
+CAL1-A,CAL1,T001,SIS-1,35,2,
+PRG1-A,PRG1,T002,SIS-1,22,2,lab

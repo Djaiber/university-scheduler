@@ -1,0 +1,1149 @@
+{
+ "schema_version": "1.0",
+ "problem_id": "synthetic-medium-s23",
+ "period": "2027-1",
+ "slots": [
+  {
+   "id": "MON-0",
+   "day": 1,
+   "index": 0,
+   "edge": true
+  },
+  {
+   "id": "MON-1",
+   "day": 1,
+   "index": 1,
+   "edge": false
+  },
+  {
+   "id": "MON-2",
+   "day": 1,
+   "index": 2,
+   "edge": false
+  },
+  {
+   "id": "MON-3",
+   "day": 1,
+   "index": 3,
+   "edge": false
+  },
+  {
+   "id": "MON-4",
+   "day": 1,
+   "index": 4,
+   "edge": true
+  },
+  {
+   "id": "TUE-0",
+   "day": 2,
+   "index": 0,
+   "edge": true
+  },
+  {
+   "id": "TUE-1",
+   "day": 2,
+   "index": 1,
+   "edge": false
+  },
+  {
+   "id": "TUE-2",
+   "day": 2,
+   "index": 2,
+   "edge": false
+  },
+  {
+   "id": "TUE-3",
+   "day": 2,
+   "index": 3,
+   "edge": false
+  },
+  {
+   "id": "TUE-4",
+   "day": 2,
+   "index": 4,
+   "edge": true
+  },
+  {
+   "id": "WED-0",
+   "day": 3,
+   "index": 0,
+   "edge": true
+  },
+  {
+   "id": "WED-1",
+   "day": 3,
+   "index": 1,
+   "edge": false
+  },
+  {
+   "id": "WED-2",
+   "day": 3,
+   "index": 2,
+   "edge": false
+  },
+  {
+   "id": "WED-3",
+   "day": 3,
+   "index": 3,
+   "edge": false
+  },
+  {
+   "id": "WED-4",
+   "day": 3,
+   "index": 4,
+   "edge": true
+  },
+  {
+   "id": "THU-0",
+   "day": 4,
+   "index": 0,
+   "edge": true
+  },
+  {
+   "id": "THU-1",
+   "day": 4,
+   "index": 1,
+   "edge": false
+  },
+  {
+   "id": "THU-2",
+   "day": 4,
+   "index": 2,
+   "edge": false
+  },
+  {
+   "id": "THU-3",
+   "day": 4,
+   "index": 3,
+   "edge": false
+  },
+  {
+   "id": "THU-4",
+   "day": 4,
+   "index": 4,
+   "edge": true
+  },
+  {
+   "id": "FRI-0",
+   "day": 5,
+   "index": 0,
+   "edge": true
+  },
+  {
+   "id": "FRI-1",
+   "day": 5,
+   "index": 1,
+   "edge": false
+  },
+  {
+   "id": "FRI-2",
+   "day": 5,
+   "index": 2,
+   "edge": false
+  },
+  {
+   "id": "FRI-3",
+   "day": 5,
+   "index": 3,
+   "edge": false
+  },
+  {
+   "id": "FRI-4",
+   "day": 5,
+   "index": 4,
+   "edge": true
+  }
+ ],
+ "teachers": [
+  {
+   "id": "T001",
+   "unavailable": [
+    "MON-4",
+    "TUE-1",
+    "WED-1"
+   ],
+   "not_preferred": [
+    "MON-0",
+    "TUE-3",
+    "WED-4"
+   ]
+  },
+  {
+   "id": "T002",
+   "unavailable": [
+    "THU-4",
+    "TUE-1",
+    "WED-1"
+   ],
+   "not_preferred": [
+    "FRI-1",
+    "FRI-2",
+    "THU-3"
+   ]
+  },
+  {
+   "id": "T003",
+   "unavailable": [
+    "MON-1",
+    "MON-3",
+    "WED-3"
+   ],
+   "not_preferred": [
+    "FRI-1",
+    "THU-3",
+    "TUE-3"
+   ]
+  },
+  {
+   "id": "T004",
+   "unavailable": [
+    "MON-4",
+    "THU-2",
+    "WED-0"
+   ],
+   "not_preferred": [
+    "MON-3",
+    "THU-3",
+    "WED-2"
+   ]
+  },
+  {
+   "id": "T005",
+   "unavailable": [
+    "MON-0",
+    "THU-0",
+    "WED-2"
+   ],
+   "not_preferred": [
+    "MON-1",
+    "MON-2",
+    "TUE-1"
+   ]
+  },
+  {
+   "id": "T006",
+   "unavailable": [
+    "FRI-1",
+    "TUE-0",
+    "WED-3"
+   ],
+   "not_preferred": [
+    "FRI-3",
+    "MON-2",
+    "THU-4"
+   ]
+  },
+  {
+   "id": "T007",
+   "unavailable": [
+    "FRI-1",
+    "MON-2",
+    "TUE-0"
+   ],
+   "not_preferred": [
+    "FRI-0",
+    "THU-2",
+    "WED-0"
+   ]
+  },
+  {
+   "id": "T008",
+   "unavailable": [
+    "FRI-2",
+    "MON-2",
+    "WED-3"
+   ],
+   "not_preferred": [
+    "THU-0",
+    "THU-4",
+    "TUE-3"
+   ]
+  },
+  {
+   "id": "T009",
+   "unavailable": [
+    "TUE-0",
+    "TUE-3",
+    "WED-0"
+   ],
+   "not_preferred": [
+    "MON-1",
+    "WED-2",
+    "WED-3"
+   ]
+  },
+  {
+   "id": "T010",
+   "unavailable": [
+    "MON-1",
+    "MON-3",
+    "TUE-3"
+   ],
+   "not_preferred": [
+    "THU-0",
+    "THU-3",
+    "TUE-2"
+   ]
+  },
+  {
+   "id": "T011",
+   "unavailable": [
+    "FRI-3",
+    "MON-3",
+    "TUE-0"
+   ],
+   "not_preferred": [
+    "MON-0",
+    "MON-4",
+    "THU-4"
+   ]
+  },
+  {
+   "id": "T012",
+   "unavailable": [
+    "THU-4",
+    "WED-0",
+    "WED-3"
+   ],
+   "not_preferred": [
+    "THU-2",
+    "THU-3",
+    "TUE-2"
+   ]
+  },
+  {
+   "id": "T013",
+   "unavailable": [
+    "FRI-3",
+    "WED-0",
+    "WED-3"
+   ],
+   "not_preferred": [
+    "FRI-1",
+    "FRI-4",
+    "MON-1"
+   ]
+  },
+  {
+   "id": "T014",
+   "unavailable": [
+    "FRI-1",
+    "TUE-1",
+    "WED-4"
+   ],
+   "not_preferred": [
+    "FRI-4",
+    "MON-2",
+    "WED-3"
+   ]
+  },
+  {
+   "id": "T015",
+   "unavailable": [
+    "FRI-1",
+    "THU-0",
+    "WED-3"
+   ],
+   "not_preferred": [
+    "FRI-0",
+    "MON-4",
+    "TUE-4"
+   ]
+  },
+  {
+   "id": "T016",
+   "unavailable": [
+    "FRI-1",
+    "THU-2",
+    "THU-3"
+   ],
+   "not_preferred": [
+    "FRI-4",
+    "MON-2",
+    "MON-4"
+   ]
+  },
+  {
+   "id": "T017",
+   "unavailable": [
+    "FRI-1",
+    "FRI-3",
+    "FRI-4"
+   ],
+   "not_preferred": [
+    "MON-2",
+    "MON-4",
+    "TUE-0"
+   ]
+  },
+  {
+   "id": "T018",
+   "unavailable": [
+    "MON-0",
+    "MON-2",
+    "THU-0"
+   ],
+   "not_preferred": [
+    "TUE-4",
+    "WED-0",
+    "WED-4"
+   ]
+  },
+  {
+   "id": "T019",
+   "unavailable": [
+    "FRI-1",
+    "THU-4",
+    "TUE-3"
+   ],
+   "not_preferred": [
+    "MON-3",
+    "MON-4",
+    "THU-3"
+   ]
+  },
+  {
+   "id": "T020",
+   "unavailable": [
+    "MON-1",
+    "THU-3",
+    "WED-0"
+   ],
+   "not_preferred": [
+    "FRI-2",
+    "MON-3",
+    "MON-4"
+   ]
+  },
+  {
+   "id": "T021",
+   "unavailable": [
+    "MON-3",
+    "THU-2",
+    "WED-2"
+   ],
+   "not_preferred": [
+    "FRI-0",
+    "FRI-1",
+    "FRI-3"
+   ]
+  },
+  {
+   "id": "T022",
+   "unavailable": [
+    "THU-1",
+    "THU-2",
+    "THU-4"
+   ],
+   "not_preferred": [
+    "FRI-0",
+    "FRI-2",
+    "THU-3"
+   ]
+  },
+  {
+   "id": "T023",
+   "unavailable": [
+    "FRI-1",
+    "MON-2",
+    "TUE-3"
+   ],
+   "not_preferred": [
+    "MON-0",
+    "MON-3",
+    "TUE-0"
+   ]
+  },
+  {
+   "id": "T024",
+   "unavailable": [
+    "THU-2",
+    "WED-0",
+    "WED-1"
+   ],
+   "not_preferred": [
+    "THU-3",
+    "TUE-2",
+    "WED-3"
+   ]
+  },
+  {
+   "id": "T025",
+   "unavailable": [
+    "THU-3",
+    "TUE-4",
+    "WED-4"
+   ],
+   "not_preferred": [
+    "FRI-3",
+    "THU-4",
+    "TUE-1"
+   ]
+  }
+ ],
+ "rooms": [
+  {
+   "id": "A101",
+   "capacity": 40,
+   "features": [
+    "projector"
+   ]
+  },
+  {
+   "id": "A102",
+   "capacity": 30,
+   "features": [
+    "projector"
+   ]
+  },
+  {
+   "id": "A103",
+   "capacity": 30,
+   "features": [
+    "projector"
+   ]
+  },
+  {
+   "id": "A104",
+   "capacity": 50,
+   "features": [
+    "projector"
+   ]
+  },
+  {
+   "id": "A105",
+   "capacity": 40,
+   "features": [
+    "projector"
+   ]
+  },
+  {
+   "id": "A106",
+   "capacity": 45,
+   "features": [
+    "projector"
+   ]
+  },
+  {
+   "id": "A107",
+   "capacity": 45,
+   "features": [
+    "projector"
+   ]
+  },
+  {
+   "id": "A108",
+   "capacity": 50,
+   "features": [
+    "projector"
+   ]
+  },
+  {
+   "id": "LAB1",
+   "capacity": 30,
+   "features": [
+    "lab",
+    "projector"
+   ]
+  },
+  {
+   "id": "LAB2",
+   "capacity": 30,
+   "features": [
+    "lab",
+    "projector"
+   ]
+  }
+ ],
+ "groups": [
+  {
+   "id": "C101-A",
+   "course": "C101",
+   "teacher": "T017",
+   "cohort": "SIS-1A",
+   "size": 32,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C101-B",
+   "course": "C101",
+   "teacher": "T017",
+   "cohort": "SIS-1B",
+   "size": 20,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C102-A",
+   "course": "C102",
+   "teacher": "T003",
+   "cohort": "SIS-1A",
+   "size": 23,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C102-B",
+   "course": "C102",
+   "teacher": "T003",
+   "cohort": "SIS-1B",
+   "size": 43,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C103-A",
+   "course": "C103",
+   "teacher": "T012",
+   "cohort": "SIS-1A",
+   "size": 25,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C103-B",
+   "course": "C103",
+   "teacher": "T012",
+   "cohort": "SIS-1B",
+   "size": 28,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C104-A",
+   "course": "C104",
+   "teacher": "T006",
+   "cohort": "SIS-1A",
+   "size": 27,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C104-B",
+   "course": "C104",
+   "teacher": "T006",
+   "cohort": "SIS-1B",
+   "size": 26,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C105-A",
+   "course": "C105",
+   "teacher": "T016",
+   "cohort": "SIS-1A",
+   "size": 40,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C105-B",
+   "course": "C105",
+   "teacher": "T016",
+   "cohort": "SIS-1B",
+   "size": 41,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C106-A",
+   "course": "C106",
+   "teacher": "T013",
+   "cohort": "SIS-1A",
+   "size": 26,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C106-B",
+   "course": "C106",
+   "teacher": "T013",
+   "cohort": "SIS-1B",
+   "size": 33,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C201-A",
+   "course": "C201",
+   "teacher": "T019",
+   "cohort": "SIS-2A",
+   "size": 20,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C201-B",
+   "course": "C201",
+   "teacher": "T019",
+   "cohort": "SIS-2B",
+   "size": 24,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C202-A",
+   "course": "C202",
+   "teacher": "T022",
+   "cohort": "SIS-2A",
+   "size": 18,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C202-B",
+   "course": "C202",
+   "teacher": "T022",
+   "cohort": "SIS-2B",
+   "size": 26,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C203-A",
+   "course": "C203",
+   "teacher": "T014",
+   "cohort": "SIS-2A",
+   "size": 22,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C203-B",
+   "course": "C203",
+   "teacher": "T014",
+   "cohort": "SIS-2B",
+   "size": 43,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C204-A",
+   "course": "C204",
+   "teacher": "T011",
+   "cohort": "SIS-2A",
+   "size": 20,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C204-B",
+   "course": "C204",
+   "teacher": "T011",
+   "cohort": "SIS-2B",
+   "size": 23,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C205-A",
+   "course": "C205",
+   "teacher": "T024",
+   "cohort": "SIS-2A",
+   "size": 27,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C205-B",
+   "course": "C205",
+   "teacher": "T024",
+   "cohort": "SIS-2B",
+   "size": 18,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C206-A",
+   "course": "C206",
+   "teacher": "T001",
+   "cohort": "SIS-2A",
+   "size": 42,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C206-B",
+   "course": "C206",
+   "teacher": "T001",
+   "cohort": "SIS-2B",
+   "size": 30,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C301-A",
+   "course": "C301",
+   "teacher": "T010",
+   "cohort": "SIS-3A",
+   "size": 40,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C301-B",
+   "course": "C301",
+   "teacher": "T010",
+   "cohort": "SIS-3B",
+   "size": 44,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C302-A",
+   "course": "C302",
+   "teacher": "T023",
+   "cohort": "SIS-3A",
+   "size": 21,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C302-B",
+   "course": "C302",
+   "teacher": "T023",
+   "cohort": "SIS-3B",
+   "size": 22,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C303-A",
+   "course": "C303",
+   "teacher": "T025",
+   "cohort": "SIS-3A",
+   "size": 20,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C303-B",
+   "course": "C303",
+   "teacher": "T025",
+   "cohort": "SIS-3B",
+   "size": 18,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C304-A",
+   "course": "C304",
+   "teacher": "T004",
+   "cohort": "SIS-3A",
+   "size": 21,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C304-B",
+   "course": "C304",
+   "teacher": "T004",
+   "cohort": "SIS-3B",
+   "size": 19,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C305-A",
+   "course": "C305",
+   "teacher": "T020",
+   "cohort": "SIS-3A",
+   "size": 21,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C305-B",
+   "course": "C305",
+   "teacher": "T020",
+   "cohort": "SIS-3B",
+   "size": 20,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C306-A",
+   "course": "C306",
+   "teacher": "T009",
+   "cohort": "SIS-3A",
+   "size": 42,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C306-B",
+   "course": "C306",
+   "teacher": "T009",
+   "cohort": "SIS-3B",
+   "size": 34,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C401-A",
+   "course": "C401",
+   "teacher": "T002",
+   "cohort": "SIS-4A",
+   "size": 35,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C401-B",
+   "course": "C401",
+   "teacher": "T002",
+   "cohort": "SIS-4B",
+   "size": 35,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C402-A",
+   "course": "C402",
+   "teacher": "T007",
+   "cohort": "SIS-4A",
+   "size": 45,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C402-B",
+   "course": "C402",
+   "teacher": "T007",
+   "cohort": "SIS-4B",
+   "size": 45,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C403-A",
+   "course": "C403",
+   "teacher": "T005",
+   "cohort": "SIS-4A",
+   "size": 18,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C403-B",
+   "course": "C403",
+   "teacher": "T005",
+   "cohort": "SIS-4B",
+   "size": 26,
+   "sessions": 2,
+   "features": [
+    "lab"
+   ]
+  },
+  {
+   "id": "C404-A",
+   "course": "C404",
+   "teacher": "T018",
+   "cohort": "SIS-4A",
+   "size": 20,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C404-B",
+   "course": "C404",
+   "teacher": "T018",
+   "cohort": "SIS-4B",
+   "size": 30,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C405-A",
+   "course": "C405",
+   "teacher": "T008",
+   "cohort": "SIS-4A",
+   "size": 39,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C405-B",
+   "course": "C405",
+   "teacher": "T008",
+   "cohort": "SIS-4B",
+   "size": 35,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C406-A",
+   "course": "C406",
+   "teacher": "T015",
+   "cohort": "SIS-4A",
+   "size": 20,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C406-B",
+   "course": "C406",
+   "teacher": "T015",
+   "cohort": "SIS-4B",
+   "size": 38,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C501-A",
+   "course": "C501",
+   "teacher": "T021",
+   "cohort": "SIS-5A",
+   "size": 30,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C501-B",
+   "course": "C501",
+   "teacher": "T021",
+   "cohort": "SIS-5B",
+   "size": 39,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C502-A",
+   "course": "C502",
+   "teacher": "T017",
+   "cohort": "SIS-5A",
+   "size": 21,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C502-B",
+   "course": "C502",
+   "teacher": "T017",
+   "cohort": "SIS-5B",
+   "size": 30,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C503-A",
+   "course": "C503",
+   "teacher": "T003",
+   "cohort": "SIS-5A",
+   "size": 36,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C503-B",
+   "course": "C503",
+   "teacher": "T003",
+   "cohort": "SIS-5B",
+   "size": 37,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C504-A",
+   "course": "C504",
+   "teacher": "T012",
+   "cohort": "SIS-5A",
+   "size": 36,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C504-B",
+   "course": "C504",
+   "teacher": "T012",
+   "cohort": "SIS-5B",
+   "size": 25,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C505-A",
+   "course": "C505",
+   "teacher": "T006",
+   "cohort": "SIS-5A",
+   "size": 22,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C505-B",
+   "course": "C505",
+   "teacher": "T006",
+   "cohort": "SIS-5B",
+   "size": 26,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C506-A",
+   "course": "C506",
+   "teacher": "T016",
+   "cohort": "SIS-5A",
+   "size": 42,
+   "sessions": 2,
+   "features": []
+  },
+  {
+   "id": "C506-B",
+   "course": "C506",
+   "teacher": "T016",
+   "cohort": "SIS-5B",
+   "size": 30,
+   "sessions": 2,
+   "features": []
+  }
+ ],
+ "rules": {
+  "version": 1,
+  "hard": {
+   "H9_SAME_COURSE_SAME_DAY": true
+  },
+  "soft_weights": {
+   "S1_TEACHER_PREFERENCE": 5,
+   "S2_EDGE_SLOT": 2,
+   "S3_ROOM_WASTE": 1,
+   "S4_COHORT_DAY_LOAD": 3
+  },
+  "max_daily_sessions_per_cohort": 3
+ }
+}
