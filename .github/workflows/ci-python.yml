@@ -1,0 +1,41 @@
+name: CI · Python
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths: ["services/**", "tests/**", "data/**", "apps/api/db/**", "pyproject.toml", ".github/workflows/ci-python.yml"]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
+        with: { args: "check ." }
+      - uses: astral-sh/ruff-action@v3
+        with: { args: "format --check ." }
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: postgres }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_ADMIN_URL: postgresql://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - name: Instalar dependencias
+        run: |
+          pip install pytest jsonschema
+          for pkg in services/validator services/optimizer; do
+            if [ -f "$pkg/pyproject.toml" ]; then pip install -e "$pkg[dev]"; fi
+          done
+      - name: Pruebas (excluye benchmarks lentos)
+        run: pytest -m "not slow"
