@@ -1,0 +1,22 @@
+name: Jira · claves en commits y PR
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Rama con clave SCRUM
+        run: |
+          echo "${{ github.head_ref }}" | grep -Eq '^(feature|fix)/SCRUM-[0-9]+-' \
+            || { echo "::error::La rama debe llamarse feature/SCRUM-<n>-<slug> o fix/SCRUM-<n>-<slug>"; exit 1; }
+      - name: Título del PR con clave SCRUM
+        env: { TITLE: "${{ github.event.pull_request.title }}" }
+        run: echo "$TITLE" | grep -Eq 'SCRUM-[0-9]+' || { echo "::error::El título del PR debe incluir SCRUM-<n>"; exit 1; }
+      - name: Cada commit con clave SCRUM
+        run: |
+          bad=$(git log --format='%h %s' --no-merges origin/${{ github.base_ref }}..HEAD | grep -Ev '^[0-9a-f]+ SCRUM-[0-9]+ ' || true)
+          if [ -n "$bad" ]; then echo "::error::Commits sin clave Jira:"; echo "$bad"; exit 1; fi

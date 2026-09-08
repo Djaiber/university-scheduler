@@ -1,0 +1,17 @@
+# Configuración compartida de herramientas Python del monorepo (los paquetes tienen su propio pyproject)
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+extend-exclude = ["node_modules", "cdk.out"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["RUF001", "RUF002", "RUF003"]  # acentos y comillas tipográficas en textos en español
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "services"]
+addopts = "-ra"
+markers = ["slow: benchmarks y escenarios grandes (excluidos por defecto en CI rápido)"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/integration/test_db_schema.py" = ["E501"]  # fixtures SQL con UUID largos

@@ -1,0 +1,22 @@
+name: CI · Node
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths: ["apps/**", "packages/**", "infrastructure/**", "package.json", "package-lock.json", "data/schemas/**", ".github/workflows/ci-node.yml"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Tipos de contratos al día
+        run: |
+          npm run generate -w @us/shared-types
+          git diff --exit-code packages/shared-types/src/generated
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
