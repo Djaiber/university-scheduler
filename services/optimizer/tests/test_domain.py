@@ -47,3 +47,22 @@ def test_rules_defaults_and_overrides(small_raw):
     assert p.rules.same_course_same_day is False
     assert p.rules.soft_weights["S2_EDGE_SLOT"] == 9
     assert p.rules.soft_weights["S1_TEACHER_PREFERENCE"] == 5
+
+
+def test_load_problem_rejects_contract_violations(small_raw):
+    from scheduler_optimizer.io import load_problem
+
+    raw = copy.deepcopy(small_raw)
+    raw["groups"][0]["sessions"] = 9
+    with pytest.raises(ProblemInputError) as exc:
+        load_problem(raw)
+    assert exc.value.errors[0].code == "SCHEMA"
+
+
+def test_load_problem_from_file():
+    from pathlib import Path
+
+    from scheduler_optimizer.io import load_problem
+
+    path = Path(__file__).resolve().parents[3] / "data" / "sample" / "medium" / "problem.json"
+    assert len(load_problem(path).groups) == 60
