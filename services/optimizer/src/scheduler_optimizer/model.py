@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 
 from ortools.sat.python import cp_model
 
-from .domain import Problem, Session
+from .domain import Problem
 
 SessionKey = tuple[str, int]
 
@@ -26,6 +26,7 @@ class ScheduleModel:
     x: dict[tuple[SessionKey, str], cp_model.LinearExpr] = field(default_factory=dict)
     empty_domains: list[SessionKey] = field(default_factory=list)
     by_group_slot: dict[tuple[str, str], list] = field(default_factory=lambda: defaultdict(list))
+    by_session: dict[SessionKey, list] = field(default_factory=lambda: defaultdict(list))
 
     def build_hard(self) -> ScheduleModel:
         self._create_variables()
@@ -53,6 +54,7 @@ class ScheduleModel:
                     var = self.model.new_bool_var(f"z[{g.id}#{session.index},{t},{r}]")
                     self.z[(session.key, t, r)] = var
                     self.by_group_slot[(g.id, t)].append(var)
+                    self.by_session[session.key].append(((session.key, t, r), var))
                     per_slot.append(var)
                 if per_slot:
                     self.x[(session.key, t)] = sum(per_slot)
@@ -61,11 +63,8 @@ class ScheduleModel:
                 self.empty_domains.append(session.key)
 
     def _each_session_once(self) -> None:
-        by_session: dict[SessionKey, list] = defaultdict(list)
-        for (s, _t, _r), var in self.z.items():
-            by_session[s].append(var)
         for session in self.problem.sessions:
-            self.model.add_exactly_one(by_session.get(session.key, []))
+            self.model.add_exactly_one([v for _k, v in self.by_session.get(session.key, [])])
 
     # H2: un docente no dicta dos sesiones en la misma franja
     def _no_teacher_clash(self) -> None:
@@ -115,8 +114,35 @@ class ScheduleModel:
                 self.model.add(a < b)
 
     def _vars_of(self, session_key: SessionKey):
-        return [(key, v) for key, v in self.z.items() if key[0] == session_key]
+        return self.by_session.get(session_key, [])
 
-    # ---------- utilidades ----------
-    def slots_of(self, session: Session) -> list[str]:
-        return [t for (s, t) in self.x if s == session.key]
+    # ---------- resolución ----------
+    def solve(self, time_limit_s: float = 30.0, seed: int = 0, workers: int = 4) -> SolveOutcome:
+        solver = cp_model.CpSolver()
+        solver.parameters.max_time_in_seconds = float(time_limit_s)
+        solver.parameters.random_seed = int(seed)
+        solver.parameters.num_search_workers = int(workers)
+        status = solver.solve(self.model)
+        name = solver.status_name(status)
+        assignments = self.extract(solver) if status in (cp_model.OPTIMAL, cp_model.FEASIBLE) else []
+        objective = solver.objective_value if assignments and self.model.has_objective() else 0.0
+        return SolveOutcome(name, assignments, objective, solver.wall_time)
+
+    def extract(self, solver: cp_model.CpSolver) -> list[dict]:
+        out = []
+        for ((group, k), t, r), var in self.z.items():
+            if solver.boolean_value(var):
+                out.append({"group": group, "session": k, "slot": t, "room": r})
+        return sorted(out, key=lambda a: (a["group"], a["session"]))
+
+
+@dataclass(frozen=True)
+class SolveOutcome:
+    status: str  # OPTIMAL | FEASIBLE | INFEASIBLE | UNKNOWN | MODEL_INVALID
+    assignments: list[dict]
+    objective: float
+    wall_time_s: float
+
+    @property
+    def has_solution(self) -> bool:
+        return self.status in ("OPTIMAL", "FEASIBLE")
