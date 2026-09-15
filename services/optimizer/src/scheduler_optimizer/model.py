@@ -29,6 +29,9 @@ class ScheduleModel:
     def build_hard(self) -> ScheduleModel:
         self._create_variables()
         self._each_session_once()
+        self._no_teacher_clash()
+        self._no_room_clash()
+        self._no_cohort_clash()
         return self
 
     # H1 + dominios podados (H5–H8)
@@ -58,6 +61,36 @@ class ScheduleModel:
             by_session[s].append(var)
         for session in self.problem.sessions:
             self.model.add_exactly_one(by_session.get(session.key, []))
+
+    # H2: un docente no dicta dos sesiones en la misma franja
+    def _no_teacher_clash(self) -> None:
+        p = self.problem
+        for teacher, group_ids in p.groups_by_teacher.items():
+            self._at_most_one_per_slot(group_ids, f"teacher {teacher}")
+
+    # H3: un aula no aloja dos sesiones en la misma franja
+    def _no_room_clash(self) -> None:
+        by_room_slot: dict[tuple[str, str], list] = defaultdict(list)
+        for (_s, t, r), var in self.z.items():
+            by_room_slot[(r, t)].append(var)
+        for vars_ in by_room_slot.values():
+            if len(vars_) > 1:
+                self.model.add_at_most_one(vars_)
+
+    # H4: una cohorte no tiene dos sesiones simultáneas
+    def _no_cohort_clash(self) -> None:
+        for cohort, group_ids in self.problem.cohorts.items():
+            self._at_most_one_per_slot(group_ids, f"cohort {cohort}")
+
+    def _at_most_one_per_slot(self, group_ids: tuple[str, ...], _label: str) -> None:
+        wanted = set(group_ids)
+        by_slot: dict[str, list] = defaultdict(list)
+        for (s, t, _r), var in self.z.items():
+            if s[0] in wanted:
+                by_slot[t].append(var)
+        for vars_ in by_slot.values():
+            if len(vars_) > 1:
+                self.model.add_at_most_one(vars_)
 
     # ---------- utilidades ----------
     def slots_of(self, session: Session) -> list[str]:
