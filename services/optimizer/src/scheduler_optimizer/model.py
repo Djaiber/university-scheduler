@@ -25,6 +25,7 @@ class ScheduleModel:
     z: dict[tuple[SessionKey, str, str], cp_model.IntVar] = field(default_factory=dict)
     x: dict[tuple[SessionKey, str], cp_model.LinearExpr] = field(default_factory=dict)
     empty_domains: list[SessionKey] = field(default_factory=list)
+    by_group_slot: dict[tuple[str, str], list] = field(default_factory=lambda: defaultdict(list))
 
     def build_hard(self) -> ScheduleModel:
         self._create_variables()
@@ -32,6 +33,9 @@ class ScheduleModel:
         self._no_teacher_clash()
         self._no_room_clash()
         self._no_cohort_clash()
+        if self.problem.rules.same_course_same_day:
+            self._one_session_per_day_per_group()
+        self._break_session_symmetry()
         return self
 
     # H1 + dominios podados (H5–H8)
@@ -48,6 +52,7 @@ class ScheduleModel:
                         continue
                     var = self.model.new_bool_var(f"z[{g.id}#{session.index},{t},{r}]")
                     self.z[(session.key, t, r)] = var
+                    self.by_group_slot[(g.id, t)].append(var)
                     per_slot.append(var)
                 if per_slot:
                     self.x[(session.key, t)] = sum(per_slot)
@@ -83,14 +88,34 @@ class ScheduleModel:
             self._at_most_one_per_slot(group_ids, f"cohort {cohort}")
 
     def _at_most_one_per_slot(self, group_ids: tuple[str, ...], _label: str) -> None:
-        wanted = set(group_ids)
-        by_slot: dict[str, list] = defaultdict(list)
-        for (s, t, _r), var in self.z.items():
-            if s[0] in wanted:
-                by_slot[t].append(var)
-        for vars_ in by_slot.values():
+        for slot in self.problem.slots:
+            vars_ = [v for g in group_ids for v in self.by_group_slot.get((g, slot.id), [])]
             if len(vars_) > 1:
                 self.model.add_at_most_one(vars_)
+
+    # H9: un grupo no recibe dos sesiones de la misma asignatura el mismo día
+    def _one_session_per_day_per_group(self) -> None:
+        for g in self.problem.groups.values():
+            if g.sessions < 2:
+                continue
+            for day in self.problem.days:
+                vars_ = [
+                    v for s in self.problem.slots if s.day == day for v in self.by_group_slot.get((g.id, s.id), [])
+                ]
+                if len(vars_) > 1:
+                    self.model.add_at_most_one(vars_)
+
+    # Las sesiones de un grupo son intercambiables: se fuerzan en orden cronológico
+    def _break_session_symmetry(self) -> None:
+        position = {s.id: i for i, s in enumerate(sorted(self.problem.slots, key=lambda s: (s.day, s.index)))}
+        for g in self.problem.groups.values():
+            for k in range(g.sessions - 1):
+                a = sum(position[t] * v for (s, t, _r), v in self._vars_of((g.id, k)))
+                b = sum(position[t] * v for (s, t, _r), v in self._vars_of((g.id, k + 1)))
+                self.model.add(a < b)
+
+    def _vars_of(self, session_key: SessionKey):
+        return [(key, v) for key, v in self.z.items() if key[0] == session_key]
 
     # ---------- utilidades ----------
     def slots_of(self, session: Session) -> list[str]:
