@@ -37,3 +37,21 @@ comparación entre alternativas (diversidad) sea canónica.
 | medium | 120 | 15 224 | ≈2 s |
 | large | 288 | 115 236 | ≈13 s |
 | infeasible | 16 | 228 | INFEASIBLE en 0,02 s |
+
+## Restricciones blandas y objetivo
+
+`minimizar Σ_regla peso_perfil(regla) × unidades(regla)`
+
+| Código | Unidades |
+|---|---|
+| S1 | Σ x[s,t] con `t` no preferida por el docente de `s` |
+| S2 | Σ x[s,t] con `t` marcada como franja extrema |
+| S3 | Σ z[s,t,r] · ⌊(capacidad(r) − tamaño(g)) / 10⌋ |
+| S4 | Σ_{cohorte, día} max(0, sesiones − máximo diario) (variable auxiliar `extra ≥ carga − máx`) |
+
+Los perfiles multiplican los pesos base (`profiles.py`). El resultado guarda las **unidades sin
+ponderar** (`penalty_units`) para que el validador recalcule la penalización con los pesos base y
+las alternativas generadas con perfiles distintos sean comparables.
+
+Medium, 15 s, 8 workers: `balanced` 44 · `teacher_friendly` 44 · `compact` 68 · `room_efficient` 124
+(objetivos en la escala de cada perfil, todos OPTIMAL).

@@ -27,6 +27,7 @@ class ScheduleModel:
     empty_domains: list[SessionKey] = field(default_factory=list)
     by_group_slot: dict[tuple[str, str], list] = field(default_factory=lambda: defaultdict(list))
     by_session: dict[SessionKey, list] = field(default_factory=lambda: defaultdict(list))
+    penalty_terms: dict[str, cp_model.LinearExpr] = field(default_factory=dict)
 
     def build_hard(self) -> ScheduleModel:
         self._create_variables()
@@ -116,6 +117,45 @@ class ScheduleModel:
     def _vars_of(self, session_key: SessionKey):
         return self.by_session.get(session_key, [])
 
+    # ---------- restricciones blandas ----------
+    def build_objective(self, weights: dict[str, int]) -> ScheduleModel:
+        """Minimiza Σ peso × unidades de penalización. `penalty_terms` guarda unidades sin ponderar."""
+        p = self.problem
+        slot = p.slot_by_id
+        s1, s2, s3 = [], [], []
+        for ((group, _k), t, r), var in self.z.items():
+            g = p.groups[group]
+            if t in p.teachers[g.teacher].not_preferred:
+                s1.append(var)  # S1: franja no preferida por el docente
+            if slot[t].edge:
+                s2.append(var)  # S2: primera o última franja del día
+            waste_units = (p.rooms[r].capacity - g.size) // 10
+            if waste_units > 0:
+                s3.append(waste_units * var)  # S3: puestos vacíos, por cada 10
+        self.penalty_terms["S1_TEACHER_PREFERENCE"] = sum(s1)
+        self.penalty_terms["S2_EDGE_SLOT"] = sum(s2)
+        self.penalty_terms["S3_ROOM_WASTE"] = sum(s3)
+        self.penalty_terms["S4_COHORT_DAY_LOAD"] = self._cohort_overload()
+        self.model.minimize(sum(weights.get(rule, 0) * expr for rule, expr in self.penalty_terms.items()))
+        return self
+
+    def _cohort_overload(self) -> cp_model.LinearExpr:
+        """S4: sesiones por encima del máximo diario de una cohorte."""
+        p = self.problem
+        limit = p.rules.max_daily_sessions_per_cohort
+        extras = []
+        for cohort, group_ids in p.cohorts.items():
+            for day in p.days:
+                load = [
+                    v for s in p.slots if s.day == day for g in group_ids for v in self.by_group_slot.get((g, s.id), [])
+                ]
+                if len(load) <= limit:
+                    continue
+                extra = self.model.new_int_var(0, len(load), f"extra[{cohort},{day}]")
+                self.model.add(extra >= sum(load) - limit)
+                extras.append(extra)
+        return sum(extras)
+
     # ---------- resolución ----------
     def solve(self, time_limit_s: float = 30.0, seed: int = 0, workers: int = 4) -> SolveOutcome:
         solver = cp_model.CpSolver()
@@ -126,7 +166,8 @@ class ScheduleModel:
         name = solver.status_name(status)
         assignments = self.extract(solver) if status in (cp_model.OPTIMAL, cp_model.FEASIBLE) else []
         objective = solver.objective_value if assignments and self.model.has_objective() else 0.0
-        return SolveOutcome(name, assignments, objective, solver.wall_time)
+        breakdown = {k: int(solver.value(v)) for k, v in self.penalty_terms.items()} if assignments else {}
+        return SolveOutcome(name, assignments, objective, solver.wall_time, breakdown)
 
     def extract(self, solver: cp_model.CpSolver) -> list[dict]:
         out = []
@@ -142,6 +183,7 @@ class SolveOutcome:
     assignments: list[dict]
     objective: float
     wall_time_s: float
+    penalty_units: dict[str, int] = field(default_factory=dict)
 
     @property
     def has_solution(self) -> bool:
