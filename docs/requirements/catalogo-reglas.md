@@ -25,7 +25,7 @@ El catálogo se persiste en `academic_rules` / `rule_versions` y se envía al so
 |---|---|---|
 | `S1_TEACHER_PREFERENCE` | Sesión en franja que el docente marcó como no preferida. | 5 |
 | `S2_EDGE_SLOT` | Sesión en primera franja de la mañana o última de la noche. | 2 |
-| `S3_ROOM_WASTE` | Asiento sobrante por encima del 50 % de la capacidad (por cada 10 puestos). | 1 |
+| `S3_ROOM_WASTE` | Puestos vacíos en el aula: una unidad por cada 10 (`(capacidad − tamaño) div 10`). | 1 |
 | `S4_COHORT_DAY_LOAD` | Cohorte con más de 3 sesiones el mismo día (por sesión extra). | 3 |
 
 ## Perfiles de objetivo
