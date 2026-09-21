@@ -55,3 +55,14 @@ las alternativas generadas con perfiles distintos sean comparables.
 
 Medium, 15 s, 8 workers: `balanced` 44 · `teacher_friendly` 44 · `compact` 68 · `room_efficient` 124
 (objetivos en la escala de cada perfil, todos OPTIMAL).
+
+## Alternativas diversas
+
+`alternatives.py` genera las alternativas en secuencia. La alternativa *i* usa el perfil *i* de la
+rotación (empezando por el pedido), la semilla `seed + 101·i` y exige
+`Σ_{s} x[s, franja_previa(s)] ≤ |S| − ⌈d·|S|⌉` frente a cada alternativa anterior (d = `min_diversity`,
+0,3 por defecto). Si no hay solución con d, reintenta con d/2; si tampoco, se detiene y el resultado
+queda `PARTIAL`. El presupuesto de tiempo se reparte entre las alternativas pendientes.
+
+Medium, 60 s totales, 8 workers: 4 alternativas OPTIMAL en 49 s con diversidad por pares
+entre 0,81 y 0,93.
