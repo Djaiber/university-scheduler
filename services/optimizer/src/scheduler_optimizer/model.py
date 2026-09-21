@@ -156,6 +156,13 @@ class ScheduleModel:
                 extras.append(extra)
         return sum(extras)
 
+    # ---------- diversidad ----------
+    def require_distance_from(self, previous: list[dict], min_changed: int) -> None:
+        """Al menos `min_changed` sesiones deben ocupar una franja distinta a la de `previous`."""
+        prev_slot = {(a["group"], a["session"]): a["slot"] for a in previous}
+        same = [v for key, entries in self.by_session.items() for (_s, t, _r), v in entries if prev_slot.get(key) == t]
+        self.model.add(sum(same) <= len(self.problem.sessions) - min_changed)
+
     # ---------- resolución ----------
     def solve(self, time_limit_s: float = 30.0, seed: int = 0, workers: int = 4) -> SolveOutcome:
         solver = cp_model.CpSolver()
