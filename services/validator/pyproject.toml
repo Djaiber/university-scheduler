@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scheduler-validator"
+version = "0.1.0"
+description = "Validador independiente de horarios (sin OR-Tools ni código del optimizer; ADR-0004)"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+scheduler-validate = "scheduler_validator.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
