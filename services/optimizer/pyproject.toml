@@ -7,7 +7,7 @@ name = "scheduler-optimizer"
 version = "0.1.0"
 description = "Motor CP-SAT para generar alternativas de horarios universitarios"
 requires-python = ">=3.10"
-dependencies = ["ortools>=9.10"]
+dependencies = ["ortools>=9.10", "scheduler-validator"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "jsonschema>=4.18"]
