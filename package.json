@@ -3,8 +3,13 @@
   "private": true,
   "version": "0.1.0",
   "description": "Plataforma de pre-organización de horarios universitarios",
-  "workspaces": ["packages/*", "apps/*", "infrastructure/aws-cdk"],
-  "engines": { "node": ">=20" },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",

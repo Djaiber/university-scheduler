@@ -18,7 +18,7 @@ antes de publicar.
 | `services/validator` | Python (sin OR-Tools) | Validación independiente de restricciones |
 | `packages/shared-types` | TypeScript | Tipos generados a partir de los contratos JSON |
 | `packages/api-client` | TypeScript | Cliente de la API para el frontend |
-| `infrastructure/aws-cdk` | AWS CDK + TypeScript | VPC, RDS, S3, SQS, ECS Fargate |
+| `terraform` | Terraform (HCL) | VPC, RDS, S3, SQS, ECR, Cognito, ECS Fargate, CloudFront, alarmas |
 | `data/` | JSON Schema, CSV | Contratos, plantillas y escenarios de ejemplo |
 | `docs/` | Markdown | Requisitos, arquitectura, ADRs, diagramas |
 | `tests/` | pytest / jest | Integración, end-to-end y benchmarks de optimización |
