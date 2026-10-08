@@ -1,0 +1,2 @@
+image_tag    = "<sha-del-commit>"
+alert_emails = ["coordinacion.sistemas@unbosque.edu.co"]
