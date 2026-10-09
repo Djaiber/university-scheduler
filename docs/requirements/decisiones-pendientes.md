@@ -18,7 +18,7 @@ Administración decida, se actualiza la tabla y, si cambia la arquitectura, se c
 | D11 | Roles y permisos | Administración + Software | `actores.md` |
 | D12 | Frecuencia de generación | Administración | Una vez por período + regeneraciones puntuales |
 | D13 | Tiempo máximo de ejecución | Conjunto | 120 s por alternativa |
-| D14 | Tecnología de despliegue | Software / Cloud | AWS, ECS Fargate |
+| D14 | Tecnología de despliegue | Software / Cloud | AWS, ECS Fargate; infraestructura con Terraform (ADR-0007) |
 | D15 | Presupuesto cloud | Conjunto | Alarma a USD 50/mes en el piloto |
 | D16 | Retención de datos | Administración + Seguridad | 5 años para versiones aprobadas; 1 año para importaciones |
 
