@@ -9,6 +9,6 @@
 | R5 | Ajustes manuales introducen conflictos | Alta | Alto | Revalidación obligatoria por revisión | SCRUM-30 |
 | R6 | Publicación de versión incorrecta | Baja | Alto | Aprobación ligada a hash de revisión inmutable | SCRUM-31 |
 | R7 | Interrupción del worker | Media | Medio | SQS, idempotencia, reintentos, DLQ, estados en PostgreSQL | SCRUM-25 |
-| R8 | Costes cloud no controlados | Baja | Medio | Alarmas de presupuesto y límites de tareas | SCRUM-26 |
+| R8 | Costes cloud no controlados | Baja | Medio | Presupuesto y alarmas en Terraform (`modules/observability`), worker escala a 0 | SCRUM-26 |
 | R9 | Data Lake prematuro | Media | Medio | Evolución por necesidades demostradas (ADR-0006) | SCRUM-9 |
 | R10 | ML sin datos suficientes | Media | Bajo | Posponer ML; medir primero métodos clásicos | SCRUM-33 |

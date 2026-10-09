@@ -26,3 +26,14 @@ __pycache__/
 # Artefactos de ejecución
 benchmarks/out/
 *.log
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash*.log
+*.auto.tfvars
+terraform.tfvars
+!terraform.tfvars.example
+override.tf
+override.tf.json

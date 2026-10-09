@@ -1,0 +1,4 @@
+# terraform init -backend-config=backend.hcl
+bucket         = "university-scheduler-tfstate-<ACCOUNT_ID>"
+dynamodb_table = "university-scheduler-tf-lock"
+region         = "us-east-1"
