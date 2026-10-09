@@ -51,12 +51,12 @@ variable "api" {
 
 variable "worker" {
   type = object({
-    cpu                = number
-    memory             = number
-    min_count          = number
-    max_count          = number
-    messages_per_task  = number
-    solver_time_limit  = number
+    cpu               = number
+    memory            = number
+    min_count         = number
+    max_count         = number
+    messages_per_task = number
+    solver_time_limit = number
   })
   default = { cpu = 2048, memory = 4096, min_count = 0, max_count = 2, messages_per_task = 1, solver_time_limit = 300 }
 }
