@@ -44,6 +44,7 @@
     "preset": "ts-jest",
     "testEnvironment": "node",
     "roots": ["<rootDir>/src", "<rootDir>/test"],
-    "testTimeout": 20000
+    "testTimeout": 20000,
+    "testRegex": ".*\\.(spec|e2e-spec)\\.ts$"
   }
 }
