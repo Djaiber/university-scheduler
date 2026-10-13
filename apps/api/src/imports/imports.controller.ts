@@ -1,7 +1,6 @@
 import { BadRequestException, Controller, Get, Param, ParseUUIDPipe, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Actor } from '../common/actor.decorator';
-import type {} from 'multer'; // tipos Express.Multer
 import { ImportsService } from './imports.service';
 import { ENTITIES } from './templates';
 
