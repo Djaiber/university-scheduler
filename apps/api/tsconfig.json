@@ -5,7 +5,20 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "declaration": false,
-    "types": ["node", "jest", "multer"]
+    "types": [
+      "node",
+      "jest",
+      "multer"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@us/shared-types": [
+        "../../packages/shared-types/src/index.ts"
+      ]
+    }
   },
-  "include": ["src", "test"]
+  "include": [
+    "src",
+    "test"
+  ]
 }
