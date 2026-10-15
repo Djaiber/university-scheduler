@@ -1,9 +1,11 @@
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { Client } from 'pg';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap';
 
@@ -44,4 +46,18 @@ export async function createApp(databaseUrl: string, extraEnv: Record<string, st
   const app = configureApp(moduleRef.createNestApplication());
   await app.init();
   return app;
+}
+
+const IMPORT_ORDER = ['time_slots', 'teachers', 'classrooms', 'courses', 'groups', 'teacher_availability', 'classroom_availability'];
+
+/** Crea período 2027-1 y programa SIS e importa un escenario de data/sample por la API real. */
+export async function seedScenario(app: INestApplication, scenario = 'small'): Promise<void> {
+  const http = () => request(app.getHttpServer());
+  await http().post('/v1/academic-periods').send({ code: '2027-1', starts_on: '2027-01-25', ends_on: '2027-06-05' });
+  await http().post('/v1/programs').send({ code: 'SIS', name: 'Ingeniería de Sistemas', faculty: 'Ingeniería' });
+  const dir = path.resolve(__dirname, '../../../data/sample', scenario);
+  for (const entity of IMPORT_ORDER) {
+    const res = await http().post(`/v1/imports/${entity}?period=2027-1`).attach('file', readFileSync(path.join(dir, `${entity}.csv`)), `${entity}.csv`);
+    if (res.body.status !== 'APPLIED') throw new Error(`Importación ${entity} falló: ${JSON.stringify(res.body.errors?.slice(0, 3))}`);
+  }
 }
