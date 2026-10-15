@@ -49,6 +49,9 @@
       "<rootDir>/test"
     ],
     "testTimeout": 20000,
-    "testRegex": ".*\\.(spec|e2e-spec)\\.ts$"
+    "testRegex": ".*\\.(spec|e2e-spec)\\.ts$",
+    "moduleNameMapper": {
+      "^@us/shared-types$": "<rootDir>/../../packages/shared-types/src/index.ts"
+    }
   }
 }
