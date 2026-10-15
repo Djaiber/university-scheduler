@@ -1,6 +1,7 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { Actor } from '../common/actor.decorator';
 import { SchemaValidationPipe } from '../common/schema-validation.pipe';
+import { JobPublisher } from '../queue/job-publisher.service';
 import { CreateRequest, RequestsService } from './requests.service';
 
 const createSchema = {
@@ -20,13 +21,16 @@ const createSchema = {
 
 @Controller('schedule-requests')
 export class RequestsController {
-  constructor(private readonly requests: RequestsService) {}
+  constructor(private readonly requests: RequestsService, private readonly publisher: JobPublisher) {}
 
   /** 202: la generación es asíncrona; el cliente consulta GET /schedule-requests/:id (RF-15). */
   @Post()
   @HttpCode(202)
-  create(@Body(new SchemaValidationPipe<CreateRequest>(createSchema)) body: CreateRequest, @Actor() actor: string) {
-    return this.requests.create(body, actor);
+  async create(@Body(new SchemaValidationPipe<CreateRequest>(createSchema)) body: CreateRequest, @Actor() actor: string) {
+    const created = await this.requests.create(body, actor);
+    // Tras el COMMIT; si falla, el barrido del outbox lo reintenta y la solicitud no se pierde
+    const published = await this.publisher.publish(created.run_id).catch(() => false);
+    return { ...created, published };
   }
 
   @Get()
