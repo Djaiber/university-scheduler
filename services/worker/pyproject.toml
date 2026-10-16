@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scheduler-worker"
+version = "0.1.0"
+description = "Worker SQS que ejecuta el motor de optimización y persiste resultados (ADR-0003)"
+requires-python = ">=3.10"
+dependencies = ["scheduler-optimizer", "scheduler-validator", "psycopg[binary]>=3.2", "boto3>=1.35", "jsonschema>=4.18"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+scheduler-worker = "scheduler_worker.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
