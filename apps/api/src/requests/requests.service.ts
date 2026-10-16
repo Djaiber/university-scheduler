@@ -93,6 +93,11 @@ export class RequestsService {
   }
 
   async cancel(id: string, actor: string, reason?: string) {
-    return this.db.tx((tx) => transitionRequest(tx, id, 'CANCELLED', actor, reason));
+    return this.db.tx(async (tx) => {
+      const result = await transitionRequest(tx, id, 'CANCELLED', actor, reason);
+      // Las ejecuciones aún en cola tampoco deben publicarse ni procesarse
+      await tx.query("UPDATE optimization_runs SET status = 'CANCELLED' WHERE request_id = $1 AND status = 'QUEUED'", [id]);
+      return result;
+    });
   }
 }

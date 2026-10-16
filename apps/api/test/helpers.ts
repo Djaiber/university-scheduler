@@ -40,9 +40,15 @@ export async function createTestDatabase(): Promise<{ url: string; drop: () => P
   };
 }
 
-export async function createApp(databaseUrl: string, extraEnv: Record<string, string> = {}): Promise<INestApplication> {
-  Object.assign(process.env, { DATABASE_URL: databaseUrl, ...extraEnv });
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+export async function createApp(
+  databaseUrl: string,
+  extraEnv: Record<string, string> = {},
+  overrides: { provide: unknown; useValue: unknown }[] = [],
+): Promise<INestApplication> {
+  Object.assign(process.env, { DATABASE_URL: databaseUrl, OUTBOX_INTERVAL_MS: '0', ...extraEnv });
+  let builder = Test.createTestingModule({ imports: [AppModule] });
+  for (const o of overrides) builder = builder.overrideProvider(o.provide).useValue(o.useValue);
+  const moduleRef = await builder.compile();
   const app = configureApp(moduleRef.createNestApplication());
   await app.init();
   return app;
