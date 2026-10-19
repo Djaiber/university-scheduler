@@ -15,3 +15,5 @@ markers = ["slow: benchmarks y escenarios grandes (excluidos por defecto en CI r
 
 [tool.ruff.lint.per-file-ignores]
 "tests/integration/test_db_schema.py" = ["E501"]  # fixtures SQL con UUID largos
+"services/worker/src/scheduler_worker/repository.py" = ["E501"]  # sentencias SQL
+"services/worker/tests/*" = ["E501"]

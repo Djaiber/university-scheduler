@@ -34,7 +34,7 @@ jobs:
       - name: Instalar dependencias
         run: |
           pip install pytest jsonschema
-          for pkg in services/validator services/optimizer; do
+          for pkg in services/validator services/optimizer services/worker; do
             if [ -f "$pkg/pyproject.toml" ]; then pip install -e "$pkg[dev]"; fi
           done
       - name: Pruebas (excluye benchmarks lentos)
