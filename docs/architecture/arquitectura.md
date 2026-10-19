@@ -87,3 +87,21 @@ solución dentro del presupuesto, lo que **no** prueba inviabilidad (§4.3 del p
 | API ↔ Worker | `data/schemas/job-message.v1.json` | `schema_version` |
 | Worker ↔ Solver | `data/schemas/problem.v1.json` → `result.v1.json` | `schema_version` |
 | Web ↔ API | OpenAPI generado por NestJS | `/v1` en la ruta |
+
+## Worker de optimización (`services/worker`)
+
+| Situación | Acción | ¿Se borra el mensaje? |
+|---|---|---|
+| JSON ilegible o fuera de `job-message.v1` | `DISCARDED` (registrado en logs) | Sí |
+| Run ya terminado o en curso | `DUPLICATE`, no se resuelve de nuevo | Sí |
+| Run en `SOLVING` más antiguo que 2× el límite de tiempo | se reclama (worker anterior caído) | — |
+| Hash del snapshot distinto al del mensaje | `FAILED` no reintentable | Sí |
+| Error técnico, intento < `maxReceiveCount` | run vuelve a `QUEUED` | No (SQS reintenta) |
+| Error técnico en el último intento | `FAILED` | No → termina en la DLQ |
+| Resultado obtenido | alternativas + revisión 0 + asignaciones en una transacción | Sí |
+
+Mientras resuelve, el worker extiende la visibilidad del mensaje cada `VISIBILITY_EXTENSION_S/2`
+segundos. Ante `SIGTERM` (despliegue o escalado a 0) termina el mensaje en curso y se detiene.
+
+**Hash de revisión:** `sha256` del JSON compacto de la lista ordenada `[[grupo, sesión, franja, aula], …]`.
+Lo calculan igual el worker (revisión 0) y la API (revisiones manuales); la aprobación se liga a ese hash.
