@@ -1,0 +1,73 @@
+# Entorno local completo: PostgreSQL + LocalStack (SQS, S3) + migraciones + API + worker.
+#   docker compose up --build
+#   curl http://localhost:3000/v1/health
+name: university-scheduler
+
+x-aws: &aws
+  AWS_REGION: us-east-1
+  AWS_ENDPOINT_URL: http://localstack:4566
+  AWS_ACCESS_KEY_ID: test
+  AWS_SECRET_ACCESS_KEY: test
+  SQS_QUEUE_URL: http://localstack:4566/000000000000/optimization-jobs
+  EXPORTS_BUCKET: scheduler-exports
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: scheduler
+      POSTGRES_PASSWORD: scheduler
+      POSTGRES_DB: scheduler
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scheduler"]
+      interval: 3s
+      retries: 20
+
+  localstack:
+    image: localstack/localstack:3.8
+    environment:
+      SERVICES: sqs,s3
+    ports: ["4566:4566"]
+    volumes: ["./infra-local/localstack-init.sh:/etc/localstack/init/ready.d/init.sh:ro"]
+    healthcheck:
+      test: ["CMD-SHELL", "awslocal sqs get-queue-url --queue-name optimization-jobs"]
+      interval: 5s
+      retries: 30
+
+  migrate:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    command: ["bash", "db/migrate.sh"]
+    environment:
+      DATABASE_URL: postgresql://scheduler:scheduler@postgres:5432/scheduler
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  api:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    environment:
+      <<: *aws
+      DATABASE_URL: postgresql://scheduler:scheduler@postgres:5432/scheduler
+      IMPORTS_BUCKET: scheduler-imports
+      PORT: "3000"
+    ports: ["3000:3000"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      localstack: { condition: service_healthy }
+
+  worker:
+    build: { context: ., dockerfile: services/worker/Dockerfile }
+    environment:
+      <<: *aws
+      DATABASE_URL: postgresql://scheduler:scheduler@postgres:5432/scheduler
+      SOLVER_WORKERS: "4"
+      SOLVER_MAX_TIME_LIMIT: "300"
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      localstack: { condition: service_healthy }
+    deploy:
+      replicas: 1
+
+volumes:
+  pgdata:
