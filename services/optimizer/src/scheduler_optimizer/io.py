@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from .domain import InputError, Problem, ProblemInputError
 
-SCHEMA_PATH = Path(__file__).resolve().parents[4] / "data" / "schemas" / "problem.v1.json"
+SCHEMA_PATH = (
+    Path(os.environ.get("SCHEMAS_DIR", Path(__file__).resolve().parents[4] / "data" / "schemas")) / "problem.v1.json"
+)
 
 
 def validate_contract(data: dict, schema_path: Path = SCHEMA_PATH) -> list[InputError]:

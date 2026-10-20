@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
@@ -22,7 +23,10 @@ from scheduler_optimizer.solve import SOLVER_VERSION, solve
 from .repository import Claim, Repository
 
 log = logging.getLogger("scheduler_worker")
-SCHEMA = Path(__file__).resolve().parents[4] / "data" / "schemas" / "job-message.v1.json"
+SCHEMA = (
+    Path(os.environ.get("SCHEMAS_DIR", Path(__file__).resolve().parents[4] / "data" / "schemas"))
+    / "job-message.v1.json"
+)
 
 
 class ResultStore(Protocol):
