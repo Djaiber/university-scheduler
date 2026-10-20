@@ -33,3 +33,28 @@ Usuario → API (PostgreSQL) → SQS → Worker Python (CP-SAT) → Validador �
 
 El trabajo se gestiona en Jira (proyecto **SCRUM**). Cada commit y cada rama llevan la clave
 del issue; ver [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Desarrollo local
+
+```bash
+docker compose up --build          # PostgreSQL + LocalStack (SQS/S3) + migraciones + API + worker
+curl localhost:3000/v1/health
+
+# Cargar el escenario de ejemplo y pedir 4 alternativas
+curl -X POST localhost:3000/v1/academic-periods -H 'content-type: application/json' \
+  -d '{"code":"2027-1","starts_on":"2027-01-25","ends_on":"2027-06-05"}'
+curl -X POST localhost:3000/v1/programs -H 'content-type: application/json' \
+  -d '{"code":"SIS","name":"Ingeniería de Sistemas","faculty":"Ingeniería"}'
+for e in time_slots teachers classrooms courses groups teacher_availability classroom_availability; do
+  curl -s -X POST "localhost:3000/v1/imports/$e?period=2027-1" -F "file=@data/sample/medium/$e.csv" | jq .status
+done
+curl -X POST localhost:3000/v1/schedule-requests -H 'content-type: application/json' -d '{"period":"2027-1"}'
+```
+
+Sin Docker: `pip install -e services/validator -e services/optimizer -e services/worker`, `npm ci`, un
+PostgreSQL 16 local con `DATABASE_URL` y `apps/api/db/migrate.sh`. Pruebas: `pytest -m "not slow"`
+y `npm test` (con `TEST_DATABASE_ADMIN_URL` para las que usan base de datos).
+
+## Infraestructura
+
+Terraform en [`terraform/`](terraform/README.md) (ADR-0007).
