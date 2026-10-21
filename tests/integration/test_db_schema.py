@@ -61,9 +61,8 @@ INSERT INTO courses(id, program_id, code, name, semester)
 INSERT INTO groups(id, period_id, course_id, code, teacher_id, cohort, size, sessions_per_week)
   VALUES ('00000000-0000-0000-0000-000000000007','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000006',
           'CAL1-A','00000000-0000-0000-0000-000000000004','SIS-1',35,1);
-INSERT INTO rule_versions(id, version, published_at, published_by) VALUES ('00000000-0000-0000-0000-000000000008',1,now(),'admin');
 INSERT INTO input_snapshots(id, period_id, rule_version_id, content_sha256, problem, created_by)
-  VALUES ('00000000-0000-0000-0000-000000000009','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000008',
+  VALUES ('00000000-0000-0000-0000-000000000009','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-0000000000a1',
           repeat('a',64),'{}','coord');
 INSERT INTO schedule_requests(id, period_id, snapshot_id, alternatives_requested, time_limit_seconds, requested_by)
   VALUES ('00000000-0000-0000-0000-00000000000a','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000009',4,120,'coord');
