@@ -5,7 +5,10 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: { '@us/shared-types': path.resolve(__dirname, '../../packages/shared-types/src/index.ts') },
+    alias: {
+      '@us/shared-types': path.resolve(__dirname, '../../packages/shared-types/src/index.ts'),
+      '@us/api-client': path.resolve(__dirname, '../../packages/api-client/src/index.ts'),
+    },
   },
   server: {
     port: 5173,
