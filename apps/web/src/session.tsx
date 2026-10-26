@@ -35,7 +35,7 @@ export function SessionProvider({ children, baseUrl = '/v1' }: { children: React
   };
   const api = useMemo(
     () =>
-      new ApiClient(baseUrl, () =>
+      new ApiClient(baseUrl, (): Record<string, string> =>
         session.token
           ? { authorization: `Bearer ${session.token}` }
           : { 'x-actor': session.actor, 'x-roles': session.roles.join(',') },
