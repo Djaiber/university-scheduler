@@ -67,3 +67,27 @@ export async function seedScenario(app: INestApplication, scenario = 'small'): P
     if (res.body.status !== 'APPLIED') throw new Error(`Importación ${entity} falló: ${JSON.stringify(res.body.errors?.slice(0, 3))}`);
   }
 }
+
+/** ¿Están instalados los paquetes Python del worker? (pruebas de integración API ↔ worker) */
+export const workerAvailable = (() => {
+  try {
+    execFileSync('python3', ['-c', 'import scheduler_worker.handler'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+export const describeWithWorker = ADMIN_URL && workerAvailable ? describe : describe.skip;
+
+/** Ejecuta el manejador real del worker Python sobre un mensaje SQS (sin cola de por medio). */
+export function runWorker(databaseUrl: string, messageBody: string): string {
+  const code = [
+    'import os, sys',
+    'from scheduler_worker.handler import JobHandler',
+    'from scheduler_worker.repository import Repository',
+    "print(JobHandler(Repository(os.environ['DATABASE_URL']), solver_workers=2).handle(sys.stdin.read()).detail)",
+  ].join('\n');
+  return execFileSync('python3', ['-c', code], {
+    input: messageBody, env: { ...process.env, DATABASE_URL: databaseUrl }, encoding: 'utf8', timeout: 120000,
+  }).trim().split('\n').at(-1) ?? '';
+}
