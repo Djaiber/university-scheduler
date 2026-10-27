@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from 'react-router-dom';
+import { ComparePage } from './pages/ComparePage';
 import { RequestDetailPage } from './pages/RequestDetailPage';
 import { RequestsPage } from './pages/RequestsPage';
 import { ROLES, Role, useSession } from './session';
@@ -28,6 +29,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<RequestsPage />} />
           <Route path="/requests/:id" element={<RequestDetailPage />} />
+          <Route path="/requests/:id/compare" element={<ComparePage />} />
         </Routes>
       </main>
     </>
