@@ -41,6 +41,84 @@ export interface ScheduleRequestDetail extends ScheduleRequestSummary {
   alternatives: AlternativeSummary[];
 }
 
+export interface Assignment {
+  group: string;
+  session: number;
+  slot: string;
+  room: string;
+  course: string;
+  teacher: string;
+  cohort: string;
+}
+
+export interface Violation {
+  rule: string;
+  message: string;
+  entities: string[];
+}
+
+export interface Revision {
+  id: string;
+  revision_no: number;
+  parent_revision_id: string | null;
+  content_sha256: string;
+  hard_violations: number;
+  soft_penalty: number;
+  validation: { valid: boolean; hard_violations: Violation[]; soft_penalty: number; soft_breakdown: Record<string, number> };
+  reason: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface Slack {
+  teacher_free_slots_min: number;
+  teacher_free_slots_avg: number;
+  free_rooms_per_slot_min: number;
+  free_rooms_per_slot_avg: number;
+  capacity_surplus_avg: number;
+  mobility: { movable_share: number; avg_alternative_slots: number; rigid_sessions: string[]; rigid_count: number };
+}
+
+export interface AlternativeMetrics {
+  rooms_used: number;
+  room_utilization: number;
+  slack: Slack;
+  solve_time_s?: number;
+}
+
+export interface ComparisonItem {
+  id: string;
+  ordinal: number;
+  profile: string;
+  solver_status: string;
+  metrics: AlternativeMetrics;
+  revision: { id: string; revision_no: number; hard_violations: number; soft_penalty: number; soft_breakdown: Record<string, number> } | null;
+  assignments: Assignment[];
+}
+
+export interface Comparison {
+  run_id: string;
+  pairwise_diversity: number[][];
+  alternatives: ComparisonItem[];
+}
+
+export interface SlotInfo { id: string; day: number; index: number; edge?: boolean }
+export interface RoomInfo { id: string; capacity: number; features?: string[] }
+
+export interface AlternativeDetail {
+  id: string;
+  run_id: string;
+  request_id: string;
+  request_status: JobStatus;
+  ordinal: number;
+  profile: string;
+  period: string;
+  metrics: AlternativeMetrics;
+  revision: Revision | null;
+  assignments: Assignment[];
+  context: { slots: SlotInfo[]; rooms: RoomInfo[] };
+}
+
 export interface NewScheduleRequest {
   period: string;
   program?: string;
@@ -85,6 +163,18 @@ export class ApiClient {
 
   cancelRequest(id: string, reason?: string) {
     return this.request<{ from: JobStatus; to: JobStatus }>('POST', `/schedule-requests/${id}/cancel`, { reason });
+  }
+
+  getComparison(requestId: string) {
+    return this.request<Comparison>('GET', `/schedule-requests/${requestId}/comparison`);
+  }
+
+  getAlternative(id: string) {
+    return this.request<AlternativeDetail>('GET', `/alternatives/${id}`);
+  }
+
+  listRevisions(alternativeId: string) {
+    return this.request<Omit<Revision, 'validation'>[]>('GET', `/alternatives/${alternativeId}/revisions`);
   }
 
   listPeriods() {
