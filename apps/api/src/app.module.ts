@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AlternativesModule } from './alternatives/alternatives.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
@@ -7,5 +8,5 @@ import { ImportsModule } from './imports/imports.module';
 import { QueueModule } from './queue/queue.module';
 import { RequestsModule } from './requests/requests.module';
 
-@Module({ imports: [ConfigModule, DatabaseModule, HealthModule, QueueModule, CatalogModule, ImportsModule, RequestsModule] })
+@Module({ imports: [ConfigModule, DatabaseModule, HealthModule, QueueModule, CatalogModule, ImportsModule, RequestsModule, AlternativesModule] })
 export class AppModule {}
