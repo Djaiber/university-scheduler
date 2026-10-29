@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { Actor } from '../common/actor.decorator';
 import { SchemaValidationPipe } from '../common/schema-validation.pipe';
 import { AlternativesService } from './alternatives.service';
@@ -43,6 +43,7 @@ export class AlternativesController {
   }
 
   @Post('alternatives/:id/preview')
+  @HttpCode(200)
   preview(@Param('id', new ParseUUIDPipe()) id: string, @Body(new SchemaValidationPipe<{ changes: Change[] }>(previewSchema)) body: { changes: Change[] }) {
     return this.revisionsSvc.preview(id, body.changes);
   }
