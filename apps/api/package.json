@@ -25,7 +25,8 @@
     "multer": "^1.4.5-lts.1",
     "pg": "^8.13.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "@us/schedule-validator": "*"
   },
   "devDependencies": {
     "@nestjs/testing": "^10.4.0",
@@ -51,7 +52,8 @@
     "testTimeout": 20000,
     "testRegex": ".*\\.(spec|e2e-spec)\\.ts$",
     "moduleNameMapper": {
-      "^@us/shared-types$": "<rootDir>/../../packages/shared-types/src/index.ts"
+      "^@us/shared-types$": "<rootDir>/../../packages/shared-types/src/index.ts",
+      "^@us/schedule-validator$": "<rootDir>/../../packages/schedule-validator/src/index.ts"
     }
   }
 }
