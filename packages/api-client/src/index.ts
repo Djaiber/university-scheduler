@@ -119,6 +119,13 @@ export interface AlternativeDetail {
   context: { slots: SlotInfo[]; rooms: RoomInfo[] };
 }
 
+export interface Change {
+  group: string;
+  session: number;
+  slot: string;
+  room: string;
+}
+
 export interface NewScheduleRequest {
   period: string;
   program?: string;
@@ -175,6 +182,15 @@ export class ApiClient {
 
   listRevisions(alternativeId: string) {
     return this.request<Omit<Revision, 'validation'>[]>('GET', `/alternatives/${alternativeId}/revisions`);
+  }
+
+  previewChanges(alternativeId: string, changes: Change[]) {
+    return this.request<Revision['validation']>('POST', `/alternatives/${alternativeId}/preview`, { changes });
+  }
+
+  createRevision(alternativeId: string, body: { base_revision_id: string; changes: Change[]; reason: string }) {
+    return this.request<{ id: string; revision_no: number; content_sha256: string; validation: Revision['validation'] }>(
+      'POST', `/alternatives/${alternativeId}/revisions`, body);
   }
 
   listPeriods() {
