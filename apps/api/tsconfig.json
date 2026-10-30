@@ -14,6 +14,9 @@
     "paths": {
       "@us/shared-types": [
         "../../packages/shared-types/src/index.ts"
+      ],
+      "@us/schedule-validator": [
+        "../../packages/schedule-validator/src/index.ts"
       ]
     }
   },

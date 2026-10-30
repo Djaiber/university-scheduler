@@ -105,3 +105,16 @@ segundos. Ante `SIGTERM` (despliegue o escalado a 0) termina el mensaje en curso
 
 **Hash de revisión:** `sha256` del JSON compacto de la lista ordenada `[[grupo, sesión, franja, aula], …]`.
 Lo calculan igual el worker (revisión 0) y la API (revisiones manuales); la aprobación se liga a ese hash.
+
+## Edición manual y revalidación (SCRUM-30)
+
+- Cada ajuste crea una **revisión nueva e inmutable** (`schedule_revisions`, `revision_no` + 1) con sus
+  asignaciones completas, el informe del validador y el motivo; nunca se modifica una revisión.
+- La API valida con `@us/schedule-validator` (TypeScript). Es una implementación independiente del
+  validador Python, verificada con 112 casos dorados generados por el validador Python
+  (`tests/fixtures/validator-golden`): mismas violaciones, entidades y penalizaciones.
+- Concurrencia optimista: la edición indica `base_revision_id`; si otra persona guardó antes → 409.
+- Editar una solicitud en `PENDING_APPROVAL` o `APPROVED` revoca la aprobación vigente y la devuelve a
+  `NEEDS_ADJUSTMENTS` (la aprobación está ligada al hash de una revisión concreta).
+- Las revisiones con violaciones duras se guardan (para no perder trabajo) pero el trigger
+  `check_approval` impide aprobarlas sin excepción autorizada.
