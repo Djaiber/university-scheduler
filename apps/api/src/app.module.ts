@@ -5,6 +5,7 @@ import { AlternativesModule } from './alternatives/alternatives.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
+import { GovernanceModule } from './governance/governance.module';
 import { HealthModule } from './health/health.module';
 import { ImportsModule } from './imports/imports.module';
 import { QueueModule } from './queue/queue.module';
@@ -12,5 +13,6 @@ import { RequestsModule } from './requests/requests.module';
 
 @Module({
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
-  imports: [ConfigModule, DatabaseModule, HealthModule, QueueModule, CatalogModule, ImportsModule, RequestsModule, AlternativesModule] })
+  imports: [ConfigModule, DatabaseModule, HealthModule, QueueModule, CatalogModule, ImportsModule, RequestsModule, AlternativesModule, GovernanceModule],
+})
 export class AppModule {}
