@@ -1,5 +1,6 @@
 import { BadRequestException, Controller, Get, Param, ParseUUIDPipe, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Roles } from '../auth/decorators';
 import { Actor } from '../common/actor.decorator';
 import { ImportsService } from './imports.service';
 import { ENTITIES } from './templates';
@@ -17,6 +18,7 @@ export class ImportsController {
   }
 
   @Post(':entity')
+  @Roles('DATA_STEWARD')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_BYTES, files: 1 } }))
   async upload(
     @Param('entity') entity: string,

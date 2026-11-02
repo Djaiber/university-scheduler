@@ -45,7 +45,8 @@ export async function createApp(
   extraEnv: Record<string, string> = {},
   overrides: { provide: unknown; useValue: unknown }[] = [],
 ): Promise<INestApplication> {
-  Object.assign(process.env, { DATABASE_URL: databaseUrl, OUTBOX_INTERVAL_MS: '0', ...extraEnv });
+  // DEV_DEFAULT_ROLES=ADMIN: las pruebas que no verifican permisos no necesitan enviar x-roles
+  Object.assign(process.env, { DATABASE_URL: databaseUrl, OUTBOX_INTERVAL_MS: '0', DEV_DEFAULT_ROLES: 'ADMIN', ...extraEnv });
   let builder = Test.createTestingModule({ imports: [AppModule] });
   for (const o of overrides) builder = builder.overrideProvider(o.provide).useValue(o.useValue);
   const moduleRef = await builder.compile();

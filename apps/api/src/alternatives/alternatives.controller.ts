@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Roles } from '../auth/decorators';
 import { Actor } from '../common/actor.decorator';
 import { SchemaValidationPipe } from '../common/schema-validation.pipe';
 import { AlternativesService } from './alternatives.service';
@@ -34,6 +35,7 @@ export class AlternativesController {
 
   /** Guarda un ajuste manual como revisión nueva, revalidada (RF-10). */
   @Post('alternatives/:id/revisions')
+  @Roles('COORDINATOR')
   createRevision(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body(new SchemaValidationPipe<NewRevision>(revisionSchema)) body: NewRevision,
@@ -43,6 +45,7 @@ export class AlternativesController {
   }
 
   @Post('alternatives/:id/preview')
+  @Roles('COORDINATOR', 'REVIEWER')
   @HttpCode(200)
   preview(@Param('id', new ParseUUIDPipe()) id: string, @Body(new SchemaValidationPipe<{ changes: Change[] }>(previewSchema)) body: { changes: Change[] }) {
     return this.revisionsSvc.preview(id, body.changes);

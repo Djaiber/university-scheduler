@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Roles } from '../auth/decorators';
 import { SchemaValidationPipe } from '../common/schema-validation.pipe';
 import { DatabaseService } from '../database/database.service';
 
@@ -25,6 +26,7 @@ export class CatalogController {
   }
 
   @Post('academic-periods')
+  @Roles('DATA_STEWARD')
   async createPeriod(@Body(new SchemaValidationPipe<PeriodBody>(periodSchema)) b: PeriodBody) {
     const [row] = await this.db.query(
       'INSERT INTO academic_periods(code, starts_on, ends_on) VALUES ($1, $2, $3) RETURNING id, code, starts_on, ends_on',
@@ -39,6 +41,7 @@ export class CatalogController {
   }
 
   @Post('programs')
+  @Roles('DATA_STEWARD')
   async createProgram(@Body(new SchemaValidationPipe<ProgramBody>(programSchema)) b: ProgramBody) {
     const [row] = await this.db.query(
       'INSERT INTO programs(code, name, faculty) VALUES ($1, $2, $3) RETURNING id, code, name, faculty',
