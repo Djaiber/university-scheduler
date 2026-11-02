@@ -1,4 +1,5 @@
 import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/common';
+import { Public } from '../auth/decorators';
 import { APP_CONFIG, AppConfig } from '../config/config';
 import { DatabaseService } from '../database/database.service';
 
@@ -7,6 +8,7 @@ export class HealthController {
   constructor(private readonly db: DatabaseService, @Inject(APP_CONFIG) private readonly config: AppConfig) {}
 
   /** Usado por el target group del ALB (terraform/modules/compute). */
+  @Public()
   @Get()
   async check(): Promise<{ status: string; database: string; version: string }> {
     const ok = await this.db.ping();
