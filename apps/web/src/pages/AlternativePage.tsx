@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { AlternativeDetail, Assignment, Change, Revision } from '@us/api-client';
+import { GovernancePanel } from '../components/GovernancePanel';
 import { StatusBadge } from '../components/StatusBadge';
 import { Timetable } from '../components/Timetable';
 import { hasRole, useSession } from '../session';
@@ -128,6 +129,8 @@ export function AlternativePage() {
           </div>
         )}
       </section>
+
+      {pending.length === 0 && <GovernancePanel alt={alt} onChange={() => void load()} />}
 
       {validation && validation.hard_violations.length > 0 && (
         <section className="panel">
