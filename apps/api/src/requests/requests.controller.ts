@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
+import { Roles } from '../auth/decorators';
 import { Actor } from '../common/actor.decorator';
 import { SchemaValidationPipe } from '../common/schema-validation.pipe';
 import { JobPublisher } from '../queue/job-publisher.service';
@@ -26,6 +27,7 @@ export class RequestsController {
   /** 202: la generación es asíncrona; el cliente consulta GET /schedule-requests/:id (RF-15). */
   @Post()
   @HttpCode(202)
+  @Roles('COORDINATOR')
   async create(@Body(new SchemaValidationPipe<CreateRequest>(createSchema)) body: CreateRequest, @Actor() actor: string) {
     const created = await this.requests.create(body, actor);
     // Tras el COMMIT; si falla, el barrido del outbox lo reintenta y la solicitud no se pierde
@@ -44,6 +46,7 @@ export class RequestsController {
   }
 
   @Post(':id/cancel')
+  @Roles('COORDINATOR')
   cancel(@Param('id', new ParseUUIDPipe()) id: string, @Actor() actor: string, @Body() body: { reason?: string }) {
     return this.requests.cancel(id, actor, body?.reason);
   }

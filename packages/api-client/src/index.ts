@@ -119,6 +119,12 @@ export interface AlternativeDetail {
   context: { slots: SlotInfo[]; rooms: RoomInfo[] };
 }
 
+export interface GovernanceSummary {
+  reviews: { id: string; revision_id: string; revision_no: number; reviewer: string; decision: string; comment: string | null; created_at: string }[];
+  approvals: { id: string; revision_id: string; revision_no: number; approved_by: string; approved_at: string; revoked_at: string | null; revoke_reason: string | null }[];
+  publications: { id: string; approval_id: string; published_by: string; published_at: string; export_uri: string | null }[];
+}
+
 export interface Change {
   group: string;
   session: number;
@@ -191,6 +197,22 @@ export class ApiClient {
   createRevision(alternativeId: string, body: { base_revision_id: string; changes: Change[]; reason: string }) {
     return this.request<{ id: string; revision_no: number; content_sha256: string; validation: Revision['validation'] }>(
       'POST', `/alternatives/${alternativeId}/revisions`, body);
+  }
+
+  review(revisionId: string, decision: 'SEND_TO_APPROVAL' | 'REQUEST_CHANGES', comment?: string) {
+    return this.request('POST', `/revisions/${revisionId}/reviews`, { decision, ...(comment ? { comment } : {}) });
+  }
+
+  approve(revisionId: string, comment?: string) {
+    return this.request<{ id: string; content_sha256: string }>('POST', `/revisions/${revisionId}/approvals`, comment ? { comment } : {});
+  }
+
+  publish(approvalId: string) {
+    return this.request<{ publication_id: string; export_uri: string | null }>('POST', `/approvals/${approvalId}/publish`);
+  }
+
+  governance(requestId: string) {
+    return this.request<GovernanceSummary>('GET', `/schedule-requests/${requestId}/governance`);
   }
 
   listPeriods() {
