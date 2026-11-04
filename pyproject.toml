@@ -11,9 +11,13 @@ ignore = ["RUF001", "RUF002", "RUF003"]  # acentos y comillas tipográficas en t
 [tool.pytest.ini_options]
 testpaths = ["tests", "services"]
 addopts = "-ra"
-markers = ["slow: benchmarks y escenarios grandes (excluidos por defecto en CI rápido)"]
+markers = [
+  "slow: benchmarks y escenarios grandes (excluidos por defecto en CI rápido)",
+  "e2e: pila completa API + worker + SQS/S3 simulados (tests/end-to-end)",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/integration/test_db_schema.py" = ["E501"]  # fixtures SQL con UUID largos
 "services/worker/src/scheduler_worker/repository.py" = ["E501"]  # sentencias SQL
 "services/worker/tests/*" = ["E501"]
+"tests/end-to-end/*" = ["E501"]
