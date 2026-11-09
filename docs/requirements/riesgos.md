@@ -12,3 +12,6 @@
 | R8 | Costes cloud no controlados | Baja | Medio | Presupuesto y alarmas en Terraform (`modules/observability`), worker escala a 0 | SCRUM-26 |
 | R9 | Data Lake prematuro | Media | Medio | Evolución por necesidades demostradas (ADR-0006) | SCRUM-9 |
 | R10 | ML sin datos suficientes | Media | Bajo | Posponer ML; medir primero métodos clásicos | SCRUM-33 |
+| R11 | Escala: el escenario large (288 sesiones) obtiene 1 de 4 alternativas en 120 s | Media | Alto | Límite de tiempo proporcional, hints, Fargate 4 vCPU (backlog V1-01/02) | SCRUM-33 |
+
+Estado al cierre del piloto técnico: ver `docs/pilot/informe-piloto.md` §5.
