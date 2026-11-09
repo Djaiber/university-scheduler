@@ -29,6 +29,11 @@ antes de publicar.
 Usuario → API (PostgreSQL) → SQS → Worker Python (CP-SAT) → Validador → PostgreSQL → Revisión → Aprobación → Publicación
 ```
 
+## Estado
+
+MVP técnico completo (Sprints 1–4, 24 ago – 13 nov 2026), validado con datos sintéticos.
+Ver el [informe del piloto](docs/pilot/informe-piloto.md) y el [backlog priorizado](docs/pilot/backlog-priorizado.md).
+
 ## Gestión del trabajo
 
 El trabajo se gestiona en Jira (proyecto **SCRUM**). Cada commit y cada rama llevan la clave
