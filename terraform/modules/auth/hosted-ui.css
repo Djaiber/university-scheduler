@@ -1,0 +1,55 @@
+/* Login de Cognito (Hosted UI clásico) con la identidad de la Universidad El Bosque (SCRUM-46).
+   Misma paleta que apps/web/src/styles.css: verde #2F6F3E para acciones, naranja #FF8243 de acento,
+   marfil #FFFAF2 de fondo. Cognito solo admite estas clases y un subconjunto de propiedades CSS. */
+.background-customizable {
+  background-color: #fffaf2;
+}
+.banner-customizable {
+  background-color: #ffffff;
+  border-bottom: 4px solid #ff8243;
+  padding: 18px 0;
+}
+.logo-customizable {
+  max-width: 70%;
+  max-height: 60px;
+}
+.label-customizable {
+  color: #5b6b60;
+  font-weight: 600;
+}
+.textDescription-customizable {
+  color: #1f2a24;
+  font-size: 15px;
+}
+.inputField-customizable {
+  border: 1px solid #d9cfbf;
+  border-radius: 6px;
+  color: #1f2a24;
+  background-color: #ffffff;
+}
+.inputField-customizable:focus {
+  border-color: #2f6f3e;
+  box-shadow: 0 0 0 2px #9fd6a3;
+}
+.submitButton-customizable {
+  background-color: #2f6f3e;
+  border-color: #2f6f3e;
+  border-radius: 6px;
+  color: #ffffff;
+  font-weight: 600;
+  text-transform: none;
+}
+.submitButton-customizable:hover {
+  background-color: #24572f;
+  border-color: #24572f;
+  color: #ffffff;
+}
+.errorMessage-customizable {
+  background-color: #fff0e5;
+  border: 1px solid #ff8243;
+  border-radius: 6px;
+  color: #8a3a0c;
+}
+.legalText-customizable {
+  color: #5b6b60;
+}

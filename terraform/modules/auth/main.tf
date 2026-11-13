@@ -54,6 +54,13 @@ resource "aws_cognito_user_pool_domain" "this" {
   user_pool_id = aws_cognito_user_pool.this.id
 }
 
+# Identidad institucional en la pantalla de login (Hosted UI clásico): mismo logo y paleta que el panel
+resource "aws_cognito_user_pool_ui_customization" "this" {
+  user_pool_id = aws_cognito_user_pool_domain.this.user_pool_id # espera a que exista el dominio
+  css          = file("${path.module}/hosted-ui.css")
+  image_file   = filebase64("${path.module}/../../../apps/web/public/logo-unbosque-horizontal.png")
+}
+
 # Cliente público del SPA: Authorization Code + PKCE, sin secreto
 resource "aws_cognito_user_pool_client" "web" {
   name                                 = "${var.name}-web"
