@@ -8,6 +8,7 @@ export interface AppConfig {
   importsBucket: string | undefined;
   exportsBucket: string | undefined;
   cognitoIssuer: string | undefined;
+  cognitoUserPoolId: string | undefined; // alta de cuentas e invitaciones por correo
   schemasDir: string;
   version: string;
 }
@@ -36,6 +37,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     importsBucket: env.IMPORTS_BUCKET,
     exportsBucket: env.EXPORTS_BUCKET,
     cognitoIssuer: env.COGNITO_ISSUER,
+    cognitoUserPoolId: env.COGNITO_USER_POOL_ID,
     schemasDir: env.SCHEMAS_DIR ?? `${__dirname}/../../../../data/schemas`,
     version: env.APP_VERSION ?? '0.1.0',
   };

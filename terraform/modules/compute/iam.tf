@@ -39,6 +39,11 @@ resource "aws_iam_role" "api" {
 
 data "aws_iam_policy_document" "api" {
   statement {
+    sid       = "InviteUsers"
+    actions   = ["cognito-idp:AdminCreateUser", "cognito-idp:AdminGetUser"]
+    resources = [var.cognito_user_pool.arn]
+  }
+  statement {
     sid       = "PublishJobs"
     actions   = ["sqs:SendMessage", "sqs:GetQueueAttributes"]
     resources = [var.queue.arn]

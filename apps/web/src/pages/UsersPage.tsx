@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
-import type { DirectoryUser, Role, UserInput } from '@us/api-client';
+import type { DirectoryUser, InvitationStatus, Role, UserInput } from '@us/api-client';
 import { ROLE_LABELS, ROLES, useSession } from '../session';
 
 const EMPTY = { email: '', display_name: '', roles: [] as Role[], program: '', teacher: '', cohort: '', active: true };
@@ -42,7 +42,7 @@ export function UsersPage() {
     };
     try {
       const saved = await api.saveUser(form.email, body);
-      setMsg({ kind: 'ok', text: `Usuario ${saved.email} guardado.` });
+      setMsg(invitationMessage(saved.email, saved.invitation, `Usuario ${saved.email} guardado.`));
       setForm(EMPTY);
       await load();
     } catch (err) {
@@ -102,7 +102,7 @@ export function UsersPage() {
             <button type="submit" disabled={!form.email}>Guardar</button>
             {form.email && <button type="button" className="secondary" onClick={() => setForm(EMPTY)}>Limpiar</button>}
           </div>
-          <p className="muted">La persona inicia sesión con su cuenta institucional; el actor asignado aquí se suma a sus grupos de Cognito.</p>
+          <p className="muted">Al guardar un usuario nuevo se le envía un correo con su contraseña temporal; el actor asignado aquí se suma a sus grupos de Cognito.</p>
         </form>
         {msg && <p className={msg.kind === 'error' ? 'error' : 'success'} role="alert">{msg.text}</p>}
       </section>
@@ -119,7 +119,17 @@ export function UsersPage() {
                 <td>{u.roles.map((r) => <span key={r} className="chip" style={{ marginRight: 4 }}>{ROLE_LABELS[r]}</span>)}</td>
                 <td>{[u.program && `Programa ${u.program}`, u.teacher_name && `Docente ${u.teacher_name}`, u.cohort && `Cohorte ${u.cohort}`].filter(Boolean).join(' · ') || '—'}</td>
                 <td>{u.active ? <span className="badge ok">Activo</span> : <span className="badge">Inactivo</span>}</td>
-                <td><button className="link" onClick={() => edit(u)}>Editar</button></td>
+                <td>
+                  <button className="link" onClick={() => edit(u)}>Editar</button>
+                  {u.active && (
+                    <button className="link" style={{ marginLeft: 12 }} aria-label={`Reenviar invitación a ${u.email}`}
+                      onClick={() => api.resendInvitation(u.email)
+                        .then((r) => setMsg(invitationMessage(r.email, r.invitation)))
+                        .catch((e: Error) => setMsg({ kind: 'error', text: e.message }))}>
+                      Reenviar invitación
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -127,4 +137,16 @@ export function UsersPage() {
       </section>
     </>
   );
+}
+
+/** Texto para el administrador según lo que hizo Cognito con la cuenta. */
+export function invitationMessage(email: string, status: InvitationStatus | undefined, prefix = ''): { kind: 'ok' | 'error'; text: string } {
+  const lead = prefix ? `${prefix} ` : '';
+  switch (status) {
+    case 'SENT': return { kind: 'ok', text: `${lead}Se envió a ${email} un correo con su contraseña temporal.` };
+    case 'RESENT': return { kind: 'ok', text: `${lead}Se reenvió a ${email} la invitación con una contraseña temporal nueva.` };
+    case 'ALREADY_ACTIVE': return { kind: 'ok', text: `${lead}${email} ya activó su cuenta; puede usar «¿Olvidó su contraseña?» en el inicio de sesión.` };
+    case 'FAILED': return { kind: 'error', text: `${lead}No se pudo enviar la invitación a ${email}. Use «Reenviar invitación».` };
+    default: return { kind: 'ok', text: prefix || `Sin envío de correo en este entorno (${email}).` };
+  }
 }

@@ -71,3 +71,8 @@ variable "log_retention_days" {
   type    = number
   default = 30
 }
+
+variable "cognito_user_pool" {
+  description = "User pool donde la API crea las cuentas e invita por correo"
+  type        = object({ id = string, arn = string })
+}

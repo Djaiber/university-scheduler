@@ -19,6 +19,16 @@ resource "aws_cognito_user_pool" "this" {
 
   admin_create_user_config {
     allow_admin_create_user_only = true # sin autoregistro
+
+    # Correo de bienvenida con la contraseña temporal (lo envía Cognito al crear la cuenta desde el panel)
+    invite_message_template {
+      email_subject = "Su acceso a la Plataforma de horarios · Universidad El Bosque"
+      email_message = templatefile("${path.module}/invite-email.html", {
+        panel_url = var.panel_url
+        logo_url  = "${var.panel_url}/logo-unbosque-horizontal.png"
+      })
+      sms_message = "Plataforma de horarios El Bosque. Usuario: {username} Contrasena temporal: {####}"
+    }
   }
 
   password_policy {

@@ -43,6 +43,7 @@ module "auth" {
   name          = local.name
   callback_urls = concat(["${module.web.url}/auth/callback"], [for u in var.extra_callback_urls : "${u}/auth/callback"])
   logout_urls   = concat([module.web.url], var.extra_callback_urls)
+  panel_url     = module.web.url
 }
 
 module "compute" {
@@ -55,6 +56,7 @@ module "compute" {
   image_tag          = var.image_tag
   certificate_arn    = var.certificate_arn
   cognito_issuer_url = module.auth.issuer_url
+  cognito_user_pool  = { id = module.auth.user_pool_id, arn = module.auth.user_pool_arn }
   api                = var.api
   worker             = var.worker
 

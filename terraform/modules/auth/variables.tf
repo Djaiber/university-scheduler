@@ -10,3 +10,8 @@ variable "callback_urls" {
 variable "logout_urls" {
   type = list(string)
 }
+
+variable "panel_url" {
+  description = "URL pública del panel: enlace y logo del correo de invitación"
+  type        = string
+}

@@ -63,6 +63,7 @@ resource "aws_ecs_task_definition" "api" {
       { name = "PORT", value = "3000" },
       { name = "IMPORTS_BUCKET", value = var.buckets.imports },
       { name = "COGNITO_ISSUER", value = var.cognito_issuer_url },
+      { name = "COGNITO_USER_POOL_ID", value = var.cognito_user_pool.id },
     ])
     secrets = local.db_secrets
     logConfiguration = {

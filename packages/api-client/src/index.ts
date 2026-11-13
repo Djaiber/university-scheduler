@@ -26,6 +26,9 @@ export interface DirectoryUser {
   updated_at: string;
 }
 
+/** Resultado del alta en Cognito: SENT/RESENT = correo enviado con contraseña temporal. */
+export type InvitationStatus = 'SENT' | 'RESENT' | 'ALREADY_ACTIVE' | 'NOT_CONFIGURED' | 'FAILED';
+
 export interface UserInput {
   display_name?: string;
   roles: Role[];
@@ -357,7 +360,11 @@ export class ApiClient {
   }
 
   saveUser(email: string, body: UserInput) {
-    return this.request<DirectoryUser>('PUT', `/users/${encodeURIComponent(email)}`, body);
+    return this.request<DirectoryUser & { invitation?: InvitationStatus }>('PUT', `/users/${encodeURIComponent(email)}`, body);
+  }
+
+  resendInvitation(email: string) {
+    return this.request<{ email: string; invitation: InvitationStatus }>('POST', `/users/${encodeURIComponent(email)}/invitation`);
   }
 
   listTeachers() {

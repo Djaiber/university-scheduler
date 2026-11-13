@@ -1,9 +1,10 @@
-import { BadRequestException, Body, Controller, Get, Param, Put } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, Inject, Logger, NotFoundException, Param, Post, Put } from '@nestjs/common';
 import { AuthUser, ROLES, Role } from '../auth/auth.types';
 import { CurrentUser, Roles } from '../auth/decorators';
 import { SchemaValidationPipe } from '../common/schema-validation.pipe';
 import { audit } from '../database/audit';
 import { DatabaseService, Queryable } from '../database/database.service';
+import { InvitationStatus, USER_INVITER, UserInviter } from './user-inviter';
 
 interface UserBody {
   display_name?: string;
@@ -38,7 +39,9 @@ const SELECT = `SELECT u.email, u.display_name, u.roles::text[] AS roles, p.code
  */
 @Controller()
 export class UsersController {
-  constructor(private readonly db: DatabaseService) {}
+  private readonly log = new Logger(UsersController.name);
+
+  constructor(private readonly db: DatabaseService, @Inject(USER_INVITER) private readonly inviter: UserInviter) {}
 
   /** Quién soy: roles efectivos y alcance. El panel decide qué pantallas mostrar con esto. */
   @Get('me')
@@ -67,13 +70,13 @@ export class UsersController {
 
   @Put('users/:email')
   @Roles('ADMINISTRADOR')
-  upsert(@Param('email') rawEmail: string, @Body(new SchemaValidationPipe<UserBody>(userSchema)) b: UserBody, @CurrentUser() admin: AuthUser) {
+  async upsert(@Param('email') rawEmail: string, @Body(new SchemaValidationPipe<UserBody>(userSchema)) b: UserBody, @CurrentUser() admin: AuthUser) {
     const email = rawEmail.trim().toLowerCase();
     if (!EMAIL.test(email)) throw new BadRequestException('Correo inválido');
     if (email === admin.sub && (b.active === false || !b.roles.includes('ADMINISTRADOR'))) {
       throw new BadRequestException('Un administrador no puede quitarse su propio acceso de administrador');
     }
-    return this.db.tx(async (tx) => {
+    const { before, after } = await this.db.tx(async (tx) => {
       const programId = await this.lookup(tx, 'programs', 'code', b.program, 'Programa');
       const teacherId = await this.lookup(tx, 'teachers', 'external_code', b.teacher, 'Docente');
       const { rows: [before] } = await tx.query(`${SELECT} WHERE u.email = $1`, [email]);
@@ -89,8 +92,39 @@ export class UsersController {
       const { rows: [after] } = await tx.query(`${SELECT} WHERE u.email = $1`, [email]);
       await audit(tx, { actor: admin.sub, action: before ? 'USER_UPDATED' : 'USER_CREATED', entityType: 'app_user', entityId: email,
         before: before ?? undefined, after });
-      return after;
+      return { before, after };
     });
+    // Alta nueva y activa → cuenta en Cognito + correo con contraseña temporal. Fuera de la transacción:
+    // si Cognito falla, el directorio queda guardado y el administrador puede reenviar la invitación.
+    const invitation = !before && after.active ? await this.sendInvitation(email, after.display_name, admin.sub) : undefined;
+    return { ...after, ...(invitation && { invitation }) };
+  }
+
+  /** Reenvía la invitación (contraseña temporal nueva) a quien aún no ha estrenado su cuenta. */
+  @Post('users/:email/invitation')
+  @HttpCode(200)
+  @Roles('ADMINISTRADOR')
+  async invite(@Param('email') rawEmail: string, @CurrentUser() admin: AuthUser) {
+    const email = rawEmail.trim().toLowerCase();
+    const [user] = await this.db.query<{ display_name: string | null; active: boolean }>(
+      'SELECT display_name, active FROM app_users WHERE email = $1', [email]);
+    if (!user) throw new NotFoundException(`${email} no está en el directorio`);
+    if (!user.active) throw new BadRequestException('Active el usuario antes de enviarle la invitación');
+    return { email, invitation: await this.sendInvitation(email, user.display_name, admin.sub) };
+  }
+
+  private async sendInvitation(email: string, displayName: string | null, actor: string): Promise<InvitationStatus> {
+    let invitation: InvitationStatus;
+    try {
+      invitation = await this.inviter.invite(email, displayName);
+    } catch (err) {
+      this.log.error(`No se pudo invitar a ${email}: ${(err as Error).message}`);
+      invitation = 'FAILED';
+    }
+    if (invitation !== 'NOT_CONFIGURED') {
+      await audit(this.db.pool, { actor, action: `USER_INVITATION_${invitation}`, entityType: 'app_user', entityId: email });
+    }
+    return invitation;
   }
 
   private async lookup(q: Queryable, table: 'programs' | 'teachers', column: string, value: string | null | undefined, label: string) {
