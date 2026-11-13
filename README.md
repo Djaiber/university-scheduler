@@ -12,7 +12,7 @@ antes de publicar.
 
 | Ruta | Tecnología | Responsabilidad |
 |---|---|---|
-| `apps/web` | React + TypeScript | Panel administrativo: solicitudes, comparación, edición, aprobación |
+| `apps/web` | React + TypeScript | Panel con identidad de la Universidad El Bosque, por actor: administrador (datos, usuarios, generación, ajuste drag-and-drop, publicación), comité táctico (reglas, evaluación, aprobación), director (oferta, ajustes priorizados), docente (disponibilidad, horario) y estudiante (horario publicado) — ver [actores](docs/requirements/actores.md) y ADR-0008 |
 | `apps/api` | NestJS + TypeScript | API, reglas de negocio, estados, orquestación |
 | `services/optimizer` | Python + OR-Tools CP-SAT | Modelado y resolución, alternativas diversas |
 | `services/validator` | Python (sin OR-Tools) | Validación independiente de restricciones |

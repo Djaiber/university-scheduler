@@ -1,23 +1,27 @@
-# Gobierno: revisión, aprobación y publicación (SCRUM-31)
+# Gobierno: revisión, aprobación y publicación (SCRUM-31, actores SCRUM-43)
 
 ```mermaid
 stateDiagram-v2
-  PENDING_REVIEW --> PENDING_APPROVAL: REVIEWER/COORDINATOR envía (sin violaciones duras o con excepción)
-  PENDING_REVIEW --> NEEDS_ADJUSTMENTS: REVIEWER pide ajustes (comentario obligatorio)
+  PENDING_REVIEW --> PENDING_APPROVAL: COMITE_TACTICO envía (sin violaciones duras o con excepción)
+  PENDING_REVIEW --> NEEDS_ADJUSTMENTS: COMITE_TACTICO pide ajustes (comentario obligatorio)
   NEEDS_ADJUSTMENTS --> PENDING_REVIEW: nueva revisión enviada
-  PENDING_APPROVAL --> APPROVED: APPROVER aprueba la revisión exacta (hash)
-  PENDING_APPROVAL --> NEEDS_ADJUSTMENTS: edición manual
-  APPROVED --> NEEDS_ADJUSTMENTS: edición manual (revoca la aprobación)
-  APPROVED --> PUBLISHED: PUBLISHER publica
+  PENDING_APPROVAL --> APPROVED: COMITE_TACTICO aprueba la revisión exacta (hash)
+  PENDING_APPROVAL --> NEEDS_ADJUSTMENTS: edición manual del ADMINISTRADOR
+  APPROVED --> NEEDS_ADJUSTMENTS: edición manual del ADMINISTRADOR (revoca la aprobación)
+  APPROVED --> PUBLISHED: ADMINISTRADOR publica
 ```
 
 | Regla | Dónde se aplica |
 |---|---|
 | Solo usuarios autenticados (JWT de Cognito firmado, emisor y expiración) | `AuthGuard` (JWKS) |
-| Cada acción exige rol (`@Roles`); `ADMIN` puede todo | `AuthGuard` |
+| Cada acción declara sus actores (`@Roles`); no hay rol comodín (`docs/requirements/actores.md`) | `AuthGuard` |
+| Roles efectivos = grupos de Cognito ∪ directorio `app_users`; usuario desactivado = sin acceso | `AuthGuard` |
+| El director solo ve solicitudes de su programa o institucionales | `auth/scope.ts` |
+| No se genera sin la oferta consolidada (y sin cambios posteriores) de cada programa incluido | `RequestsService` + `offer_consolidations` |
+| Solo el ADMINISTRADOR ajusta (drag-and-drop) y publica; solo el COMITÉ evalúa y aprueba | `@Roles` |
 | Solo la revisión vigente se revisa/aprueba/publica | `GovernanceService` |
 | No se envía a aprobación con violaciones duras sin excepción vigente | API + trigger `check_approval` |
-| Excepciones: regla, justificación ≥ 20 caracteres, vencimiento, autorizadas por APPROVER | API + `rule_exceptions` |
+| Excepciones: regla, justificación ≥ 20 caracteres, vencimiento, autorizadas por el COMITÉ TÁCTICO | API + `rule_exceptions` |
 | Se aprueba un hash concreto; quien editó la revisión no puede aprobarla | trigger `check_approval` |
 | Editar tras enviar/aprobar revoca la aprobación | `RevisionsService` |
 | No se publica una aprobación revocada ni algo no aprobado | API + trigger `check_publication` |
