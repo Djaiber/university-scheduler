@@ -32,6 +32,14 @@ flowchart LR
   W -.logs/métricas.-> CW
 ```
 
+## Despliegue en AWS
+
+Infraestructura que crea `terraform/modules/platform` (entorno dev: un NAT, RDS en una sola AZ).
+Fuente en [`docs/diagrams/arquitectura-aws.dot`](../diagrams/arquitectura-aws.dot); se regenera con
+`dot -Tsvg docs/diagrams/arquitectura-aws.dot -o docs/diagrams/arquitectura-aws.svg`.
+
+![Arquitectura AWS](../diagrams/arquitectura-aws.svg)
+
 ## Secuencia de una generación
 
 ```mermaid
