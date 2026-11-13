@@ -5,6 +5,8 @@ WORKDIR /repo
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages/shared-types/package.json packages/shared-types/
 COPY packages/schedule-validator/package.json packages/schedule-validator/
+COPY packages/api-client/package.json packages/api-client/
+COPY apps/web/package.json apps/web/
 COPY apps/api/package.json apps/api/
 RUN npm ci --workspace @us/api --workspace @us/shared-types --workspace @us/schedule-validator --include-workspace-root=false
 COPY packages/shared-types packages/shared-types
@@ -14,9 +16,11 @@ RUN npm run build -w @us/shared-types && npm run build -w @us/schedule-validator
  && npm prune --omit=dev --workspace @us/api --workspace @us/shared-types --workspace @us/schedule-validator
 
 FROM node:22-alpine
-RUN apk add --no-cache postgresql16-client bash tini
+RUN apk add --no-cache postgresql-client bash tini
 WORKDIR /repo
-ENV NODE_ENV=production SCHEMAS_DIR=/repo/data/schemas
+ENV NODE_ENV=production SCHEMAS_DIR=/repo/data/schemas PGSSLROOTCERT=/etc/ssl/rds-global-bundle.pem
+# CA de RDS para verificar TLS hacia la base (rds.force_ssl=1)
+ADD --chmod=644 https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /etc/ssl/rds-global-bundle.pem
 COPY --from=build /repo/node_modules node_modules
 COPY --from=build /repo/packages/shared-types packages/shared-types
 COPY --from=build /repo/packages/schedule-validator packages/schedule-validator
