@@ -41,7 +41,18 @@ flowchart LR
   DLQ --> AL[Alarmas → SNS]
 ```
 
-## Primer despliegue
+## Despliegue automatizado de dev
+
+```bash
+AWS_PROFILE=<perfil> EXPECTED_ACCOUNT_SUFFIX=<últimos dígitos> ALERT_EMAIL=<correo> ./scripts/deploy-dev.sh
+```
+
+Requiere AWS CLI v2, Terraform ≥ 1.6, Docker con buildx y sesión válida en el perfil. El script verifica
+que la cuenta sea la esperada, crea el estado remoto, publica las imágenes ARM64, muestra el `plan` y
+**pide confirmación** antes de aplicar, ejecuta las migraciones, publica el panel y hace una prueba de humo.
+Es idempotente: si un paso falla se puede relanzar.
+
+## Primer despliegue (manual)
 
 ```bash
 # 1. Estado remoto (una vez por cuenta)

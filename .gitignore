@@ -37,3 +37,5 @@ terraform.tfvars
 !terraform.tfvars.example
 override.tf
 override.tf.json
+terraform/environments/*/backend.hcl
+tfplan
