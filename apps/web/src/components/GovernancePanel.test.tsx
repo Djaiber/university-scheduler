@@ -48,6 +48,7 @@ describe('GovernancePanel', () => {
     render(<SessionProvider><GovernancePanel alt={alt('PENDING_APPROVAL')} onChange={() => undefined} /></SessionProvider>);
     expect(screen.queryByRole('button', { name: /Aprobar/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Enviar a aprobación' })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('pendiente de la decisión del comité táctico');
   });
 
   it('administrador: publica la aprobación vigente y ve la trazabilidad', async () => {

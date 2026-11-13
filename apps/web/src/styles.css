@@ -42,6 +42,7 @@ main { padding: 24px; max-width: 1400px; margin: 0 auto; }
 label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
 label.inline { flex-direction: row; align-items: center; gap: 6px; }
 input, select, textarea { font: inherit; color: var(--ink); padding: 6px 8px; border: 1px solid #d9cfbf; border-radius: 6px; background: #fff; }
+input:disabled, select:disabled, textarea:disabled { background: #f6f2ec; color: var(--muted); }
 input:focus, select:focus, textarea:focus { border-color: var(--green); outline: 2px solid var(--mint); outline-offset: 0; }
 button { font: inherit; font-weight: 600; padding: 7px 14px; border-radius: 6px; border: 1px solid var(--green); background: var(--green); color: #fff; cursor: pointer; }
 button:hover:not(:disabled) { background: var(--green-ink); }
