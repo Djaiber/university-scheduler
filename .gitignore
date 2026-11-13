@@ -39,3 +39,6 @@ override.tf
 override.tf.json
 terraform/environments/*/backend.hcl
 tfplan
+
+# Paquetes de sincronización local (git bundle)
+*.bundle
