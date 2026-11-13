@@ -35,7 +35,7 @@ variable "max_allocated_storage_gb" {
 
 variable "engine_version" {
   type    = string
-  default = "16.4"
+  default = "16" # versión mayor: RDS elige la menor vigente y aplica parches automáticamente
 }
 
 variable "db_name" {

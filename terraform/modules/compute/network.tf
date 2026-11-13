@@ -4,7 +4,7 @@ data "aws_ec2_managed_prefix_list" "cloudfront" {
 
 resource "aws_security_group" "alb" {
   name        = "${var.name}-alb"
-  description = "ALB de la API: solo tráfico desde CloudFront"
+  description = "ALB de la API: solo trafico desde CloudFront"
   vpc_id      = var.vpc_id
   tags        = { Name = "${var.name}-alb" }
 }
@@ -53,7 +53,7 @@ resource "aws_vpc_security_group_ingress_rule" "api_from_alb" {
 
 resource "aws_security_group" "worker" {
   name        = "${var.name}-worker"
-  description = "Tareas del worker de optimización (sin tráfico entrante)"
+  description = "Tareas del worker de optimizacion (sin trafico entrante)"
   vpc_id      = var.vpc_id
   tags        = { Name = "${var.name}-worker" }
 }

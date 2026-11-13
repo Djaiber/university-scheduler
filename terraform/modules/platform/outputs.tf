@@ -48,3 +48,16 @@ output "cloudfront_distribution_id" {
 output "alerts_topic_arn" {
   value = module.observability.alerts_topic_arn
 }
+
+# Para ejecutar migraciones como tarea única de ECS
+output "private_subnet_ids" {
+  value = module.network.private_subnet_ids
+}
+
+output "api_security_group_id" {
+  value = module.compute.api_security_group_id
+}
+
+output "api_task_definition" {
+  value = module.compute.api_task_definition
+}
