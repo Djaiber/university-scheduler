@@ -81,3 +81,57 @@ jobs:
             const plan = fs.readFileSync('terraform/environments/${{ matrix.environment }}/plan.txt', 'utf8');
             const body = `### Terraform plan · \`${{ matrix.environment }}\`\n<details><summary>Ver plan</summary>\n\n\`\`\`\n${plan.slice(-60000)}\n\`\`\`\n</details>`;
             await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+
+  apply-dev:
+    # Cada push a main que toque terraform/** aplica el entorno dev (pilot sigue siendo manual).
+    # Requiere la variable AWS_APPLY_ROLE_ARN: rol OIDC con permisos de escritura sobre la cuenta de dev.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_APPLY_ROLE_ARN != ''
+    needs: static
+    runs-on: ubuntu-latest
+    environment: dev
+    concurrency:
+      group: terraform-apply-dev
+      cancel-in-progress: false   # nunca interrumpir un apply en curso
+    defaults:
+      run:
+        working-directory: terraform/environments/dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: "1.9.8", terraform_wrapper: false }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: init
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="dynamodb_table=${{ vars.TF_LOCK_TABLE }}" \
+            -backend-config="region=us-east-1"
+      - name: Etiqueta de imagen desplegada
+        # Este workflow no construye imágenes: se conserva la que corre en ECS para no apuntar a una etiqueta
+        # inexistente. Las imágenes nuevas se publican con scripts/deploy-dev.sh.
+        id: image
+        run: |
+          CLUSTER="$(terraform output -raw cluster_name)"
+          TD="$(aws ecs describe-services --cluster "$CLUSTER" --services api --query 'services[0].taskDefinition' --output text)"
+          IMAGE="$(aws ecs describe-task-definition --task-definition "$TD" --query 'taskDefinition.containerDefinitions[0].image' --output text)"
+          TAG="${IMAGE##*:}"
+          [[ -n "$TAG" && "$TAG" != "None" ]] || { echo "::error::No se pudo leer la imagen desplegada en ECS"; exit 1; }
+          echo "Imagen en uso: $IMAGE"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+      - name: plan
+        run: terraform plan -input=false -no-color -var="image_tag=${{ steps.image.outputs.tag }}" -out=tfplan | tee plan.txt
+      - name: apply
+        run: terraform apply -input=false -no-color tfplan
+      - name: Resumen
+        if: always()
+        run: |
+          {
+            echo "### Terraform apply · dev"
+            echo "Imagen: \`${{ steps.image.outputs.tag }}\`"
+            echo '```'
+            grep -E '^(Plan:|No changes|Apply complete)' plan.txt || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
