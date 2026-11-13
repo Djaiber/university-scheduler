@@ -1,12 +1,12 @@
 locals {
-  # Roles de docs/requirements/actores.md
+  # Actores de docs/requirements/actores.md (SCRUM-43). El grupo da el actor; el alcance (programa,
+  # docente, cohorte) lo asigna el ADMINISTRADOR en el directorio del panel.
   roles = {
-    DATA_STEWARD = "Carga y corrige datos"
-    COORDINATOR  = "Solicita, revisa y ajusta alternativas"
-    REVIEWER     = "Revisa y pide ajustes"
-    APPROVER     = "Aprueba revisiones y autoriza excepciones"
-    PUBLISHER    = "Publica versiones aprobadas"
-    ADMIN        = "Administra usuarios, reglas y parámetros"
+    ADMINISTRADOR  = "Datos maestros, usuarios y periodos; genera, ajusta y publica horarios"
+    COMITE_TACTICO = "Configura reglas, evalua y aprueba horarios"
+    DIRECTOR       = "Consolida la oferta de su programa y prioriza ajustes"
+    DOCENTE        = "Registra su disponibilidad y consulta su horario"
+    ESTUDIANTE     = "Consulta el horario publicado"
   }
 }
 
