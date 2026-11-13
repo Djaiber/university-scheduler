@@ -35,10 +35,11 @@ flowchart LR
 ## Despliegue en AWS
 
 Infraestructura que crea `terraform/modules/platform` (entorno dev: un NAT, RDS en una sola AZ).
-Fuente en [`docs/diagrams/arquitectura-aws.dot`](../diagrams/arquitectura-aws.dot); se regenera con
-`dot -Tsvg docs/diagrams/arquitectura-aws.dot -o docs/diagrams/arquitectura-aws.svg`.
+Generado con la librería [`diagrams`](https://diagrams.mingrammer.com) desde
+[`docs/diagrams/arquitectura_aws.py`](../diagrams/arquitectura_aws.py); se regenera con
+`pip install diagrams && python docs/diagrams/arquitectura_aws.py` (requiere Graphviz).
 
-![Arquitectura AWS](../diagrams/arquitectura-aws.svg)
+![Arquitectura AWS](../diagrams/arquitectura-aws.png)
 
 ## Secuencia de una generación
 
