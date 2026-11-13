@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import type { AlternativeDetail, GovernanceSummary } from '@us/api-client';
 import { hasRole, useSession } from '../session';
 
-/** Acciones de gobierno según rol y estado (§11): enviar a aprobación, pedir ajustes, aprobar, publicar. */
+/**
+ * Acciones de gobierno según actor y estado (§11, SCRUM-43): el COMITÉ TÁCTICO evalúa (envía a aprobación o
+ * pide ajustes) y aprueba; el ADMINISTRADOR publica lo aprobado.
+ */
 export function GovernancePanel({ alt, onChange }: { alt: AlternativeDetail; onChange: () => void }) {
   const { api, session } = useSession();
   const [gov, setGov] = useState<GovernanceSummary | null>(null);
@@ -31,7 +34,8 @@ export function GovernancePanel({ alt, onChange }: { alt: AlternativeDetail; onC
 
   return (
     <section className="panel" aria-label="Gobierno">
-      <h3>Revisión y aprobación</h3>
+      <p className="eyebrow">Comité táctico</p>
+      <h3>Evaluación y aprobación</h3>
       <p className="muted">
         Se aprueba la revisión exacta {rev.revision_no} (hash <code>{rev.content_sha256.slice(0, 12)}</code>). Cualquier cambio posterior
         crea otra revisión y revoca la aprobación.
@@ -40,7 +44,7 @@ export function GovernancePanel({ alt, onChange }: { alt: AlternativeDetail; onC
         <label style={{ flex: 1 }}>Comentario
           <input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Observaciones para el registro" />
         </label>
-        {hasRole(session, 'REVIEWER', 'COORDINATOR') && ['PENDING_REVIEW', 'NEEDS_ADJUSTMENTS'].includes(st) && (
+        {hasRole(session, 'COMITE_TACTICO') && ['PENDING_REVIEW', 'NEEDS_ADJUSTMENTS'].includes(st) && (
           <>
             <button disabled={rev.hard_violations > 0} title={rev.hard_violations > 0 ? 'Tiene violaciones duras' : ''}
               onClick={() => void run(() => api.review(rev.id, 'SEND_TO_APPROVAL', comment || undefined))}>Enviar a aprobación</button>
@@ -50,10 +54,10 @@ export function GovernancePanel({ alt, onChange }: { alt: AlternativeDetail; onC
             )}
           </>
         )}
-        {hasRole(session, 'APPROVER') && st === 'PENDING_APPROVAL' && (
+        {hasRole(session, 'COMITE_TACTICO') && st === 'PENDING_APPROVAL' && (
           <button onClick={() => void run(() => api.approve(rev.id, comment || undefined))}>Aprobar revisión {rev.revision_no}</button>
         )}
-        {hasRole(session, 'PUBLISHER') && st === 'APPROVED' && activeApproval && (
+        {hasRole(session, 'ADMINISTRADOR') && st === 'APPROVED' && activeApproval && (
           <button onClick={() => void run(() => api.publish(activeApproval.id))}>Publicar</button>
         )}
       </div>
