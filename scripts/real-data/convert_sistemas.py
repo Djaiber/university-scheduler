@@ -256,12 +256,15 @@ def main() -> None:
     per_room = len(slots) * 0.7
     need_lab = max(2, round(n_lab / per_room + 0.49))
     need_std = max(2, round((n_sessions - n_lab) / per_room + 0.49))
-    rooms = [[c, f"Bloque {c[0]}", 35, "projector"] for c in sorted(room_codes)]
+    # Las salas inferidas deben admitir el grupo de cómputo más grande (si no, el precheck da NO_ROOM_FOR_GROUP)
+    lab_capacity = max([int(r[4]) for r in rows_groups if r[6]] or [30])
+    std_capacity = max([int(r[4]) for r in rows_groups if not r[6]] or [35])
+    rooms = [[c, f"Bloque {c[0]}", std_capacity, "projector"] for c in sorted(room_codes)]
     std_have = len(rooms)
     for i in range(max(0, need_std - std_have)):
-        rooms.append([f"B{401 + i}", "Bloque B (inferido)", 35, "projector"])
+        rooms.append([f"B{401 + i}", "Bloque B (inferido)", std_capacity, "projector"])
     for i in range(need_lab):
-        rooms.append([f"F{301 + i}", "Bloque F (inferido)", 30, "computers|projector"])
+        rooms.append([f"F{301 + i}", "Bloque F (inferido)", lab_capacity, "computers|projector"])
     write("classrooms", ["code", "building", "capacity", "features"], rooms)
 
     write("courses", ["program_code", "code", "name", "semester"],
