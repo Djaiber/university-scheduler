@@ -1,9 +1,115 @@
 import type { JobStatus } from '@us/shared-types';
 
 /** Cliente tipado de la API /v1. La autenticación se inyecta con `headers` (JWT de Cognito o cabeceras de desarrollo). */
+export const ROLES = ['ADMINISTRADOR', 'COMITE_TACTICO', 'DIRECTOR', 'DOCENTE', 'ESTUDIANTE'] as const;
+export type Role = (typeof ROLES)[number];
+
+export interface Me {
+  email: string;
+  display_name: string | null;
+  roles: Role[];
+  program: string | null;
+  teacher: string | null;
+  cohort: string | null;
+}
+
+export interface DirectoryUser {
+  email: string;
+  display_name: string | null;
+  roles: Role[];
+  program: string | null;
+  teacher: string | null;
+  teacher_name: string | null;
+  cohort: string | null;
+  active: boolean;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface UserInput {
+  display_name?: string;
+  roles: Role[];
+  program?: string | null;
+  teacher?: string | null;
+  cohort?: string | null;
+  active?: boolean;
+}
+
+export type OfferState = 'SIN_CONSOLIDAR' | 'CONSOLIDADA' | 'DESACTUALIZADA';
+export interface OfferGroup {
+  code: string; course: string; course_name: string; teacher: string; teacher_name: string;
+  cohort: string; size: number; sessions_per_week: number; required_features: string[];
+}
+export interface OfferStatus {
+  program: string;
+  groups: number;
+  state: OfferState;
+  consolidation: { id: string; consolidated_by: string; consolidated_at: string; notes: string | null } | null;
+}
+export interface Offers { period: string; programs: OfferStatus[]; groups?: OfferGroup[] }
+
+export type AdjustmentPriority = 'ALTA' | 'MEDIA' | 'BAJA';
+export interface Adjustment {
+  id: string;
+  schedule_request_id: string;
+  program: string;
+  group_code: string | null;
+  description: string;
+  priority: AdjustmentPriority;
+  status: 'ABIERTA' | 'RESUELTA' | 'RECHAZADA';
+  created_by: string;
+  created_at: string;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  resolution: string | null;
+  revision_id: string | null;
+  revision_no: number | null;
+}
+
+export interface RuleScope {
+  code: string;
+  kind: 'HARD' | 'SOFT';
+  description: string;
+  enabled: boolean;
+  weight: number | null;
+  params: { max_daily_sessions_per_cohort?: number };
+  locked: boolean;
+}
+export interface RuleVersion {
+  id: string;
+  version: number;
+  notes: string | null;
+  published_at: string | null;
+  published_by: string | null;
+  draft: boolean;
+  rules?: RuleScope[];
+}
+
+export type AvailabilityKind = 'AVAILABLE' | 'NOT_PREFERRED' | 'UNAVAILABLE';
+export interface PeriodSlot { id: string; day: number; index: number; starts_at: string; ends_at: string; edge: boolean }
+export interface TeacherAvailability {
+  period: string;
+  teacher: string;
+  locked: boolean;
+  updated_at: string | null;
+  slots: (PeriodSlot & { availability: AvailabilityKind })[];
+}
+export interface PublishedSession {
+  group: string; session: number; course: string; course_name: string; program: string; teacher: string; teacher_name: string;
+  cohort: string; room: string; building: string; slot: string; day: number; starts_at: string; ends_at: string;
+}
+export interface PublishedSchedule {
+  period: string;
+  publication: { id: string; published_at: string; published_by?: string; revision_no: number; content_sha256?: string; program?: string | null } | null;
+  slots: PeriodSlot[];
+  sessions: PublishedSession[];
+  cohorts?: string[];
+}
+
 export interface ScheduleRequestSummary {
   id: string;
   period: string;
+  program?: string | null;
   status: JobStatus;
   alternatives_requested: number;
   optimization_profile: string;
@@ -216,6 +322,114 @@ export class ApiClient {
   }
 
   listPeriods() {
-    return this.request<{ id: string; code: string }[]>('GET', '/academic-periods');
+    return this.request<{ id: string; code: string; starts_on: string; ends_on: string }[]>('GET', '/academic-periods');
+  }
+
+  createPeriod(body: { code: string; starts_on: string; ends_on: string }) {
+    return this.request<{ id: string; code: string }>('POST', '/academic-periods', body);
+  }
+
+  listPrograms() {
+    return this.request<{ id: string; code: string; name: string; faculty: string }[]>('GET', '/programs');
+  }
+
+  createProgram(body: { code: string; name: string; faculty: string }) {
+    return this.request<{ id: string; code: string }>('POST', '/programs', body);
+  }
+
+  /** Carga un CSV (multipart). Devuelve el resultado de la importación con sus errores por fila. */
+  async importCsv(entity: string, period: string, file: File) {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(`${this.baseUrl}/imports/${entity}?period=${encodeURIComponent(period)}`, { method: 'POST', headers: this.headers(), body: form });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new ApiError(res.status, data);
+    return data as { id: string; entity: string; status: string; total_rows: number; error_rows: number; errors: { row: number; column?: string; message: string }[] };
+  }
+
+  // ---- Identidad y directorio (SCRUM-43)
+  me() {
+    return this.request<Me>('GET', '/me');
+  }
+
+  listUsers() {
+    return this.request<DirectoryUser[]>('GET', '/users');
+  }
+
+  saveUser(email: string, body: UserInput) {
+    return this.request<DirectoryUser>('PUT', `/users/${encodeURIComponent(email)}`, body);
+  }
+
+  listTeachers() {
+    return this.request<{ code: string; full_name: string; email: string | null; active: boolean }[]>('GET', '/teachers');
+  }
+
+  // ---- Oferta del director
+  offers(period: string) {
+    return this.request<Offers>('GET', `/offers?period=${encodeURIComponent(period)}`);
+  }
+
+  consolidateOffer(period: string, notes?: string) {
+    return this.request('POST', '/offers/consolidate', { period, ...(notes ? { notes } : {}) });
+  }
+
+  reopenOffer(period: string, reason: string) {
+    return this.request('POST', '/offers/reopen', { period, reason });
+  }
+
+  // ---- Ajustes priorizados
+  listAdjustments(requestId?: string) {
+    return this.request<Adjustment[]>('GET', `/adjustments${requestId ? `?request=${requestId}` : ''}`);
+  }
+
+  createAdjustment(body: { schedule_request_id: string; group_code?: string; description: string; priority: AdjustmentPriority }) {
+    return this.request<Adjustment>('POST', '/adjustments', body);
+  }
+
+  prioritizeAdjustment(id: string, priority: AdjustmentPriority) {
+    return this.request<Adjustment>('PATCH', `/adjustments/${id}/priority`, { priority });
+  }
+
+  resolveAdjustment(id: string, body: { status: 'RESUELTA' | 'RECHAZADA'; resolution: string; revision_id?: string }) {
+    return this.request<Adjustment>('POST', `/adjustments/${id}/resolve`, body);
+  }
+
+  // ---- Reglas del comité
+  listRuleVersions() {
+    return this.request<RuleVersion[]>('GET', '/rule-versions');
+  }
+
+  getRuleVersion(id: string) {
+    return this.request<RuleVersion>('GET', `/rule-versions/${id}`);
+  }
+
+  createRuleDraft(notes?: string) {
+    return this.request<RuleVersion>('POST', '/rule-versions', notes ? { notes } : {});
+  }
+
+  updateRule(versionId: string, code: string, body: { enabled?: boolean; weight?: number; params?: { max_daily_sessions_per_cohort?: number } }) {
+    return this.request<RuleVersion>('PUT', `/rule-versions/${versionId}/rules/${code}`, body);
+  }
+
+  publishRuleVersion(id: string) {
+    return this.request<RuleVersion>('POST', `/rule-versions/${id}/publish`);
+  }
+
+  // ---- Portal de docente y estudiante
+  myAvailability(period: string) {
+    return this.request<TeacherAvailability>('GET', `/me/availability?period=${encodeURIComponent(period)}`);
+  }
+
+  saveMyAvailability(period: string, slots: { slot: string; availability: AvailabilityKind }[]) {
+    return this.request<TeacherAvailability>('PUT', `/me/availability?period=${encodeURIComponent(period)}`, { slots });
+  }
+
+  mySchedule(period: string) {
+    return this.request<PublishedSchedule>('GET', `/me/schedule?period=${encodeURIComponent(period)}`);
+  }
+
+  publishedSchedule(period: string, filters: { program?: string; cohort?: string; teacher?: string } = {}) {
+    const q = new URLSearchParams({ period, ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v)) });
+    return this.request<PublishedSchedule>('GET', `/published-schedules?${q}`);
   }
 }
