@@ -5,7 +5,8 @@ import time
 
 import pytest
 
-COORD, REVIEWER, APPROVER, PUBLISHER = "COORDINATOR", "REVIEWER", "APPROVER", "PUBLISHER"
+# Actores (SCRUM-43): el administrador genera, ajusta y publica; el comité táctico evalúa y aprueba
+COORD, REVIEWER, APPROVER, PUBLISHER = "ADMINISTRADOR", "COMITE_TACTICO", "COMITE_TACTICO", "ADMINISTRADOR"
 
 
 def test_importacion_solicitud_solver_edicion_aprobacion_publicacion(seeded):
@@ -124,7 +125,7 @@ def test_escenario_inviable_se_explica_y_no_se_reintenta(seeded):
     s.call(
         "POST",
         "/imports/teacher_availability?period=2027-1",
-        role="DATA_STEWARD",
+        role="ADMINISTRADOR",
         files={
             "file": (
                 "ta.csv",
@@ -141,6 +142,7 @@ def test_escenario_inviable_se_explica_y_no_se_reintenta(seeded):
             "UPDATE groups SET teacher_id = (SELECT id FROM teachers WHERE external_code = 'T001') WHERE code = %s RETURNING 1",
             (code,),
         )
+    s.consolidate_offer("Toda la oferta con un solo docente (escenario inviable)")
     rid = s.call("POST", "/schedule-requests", role=COORD, json={"period": "2027-1", "time_limit_seconds": 10}).json()[
         "request_id"
     ]
@@ -165,7 +167,7 @@ def test_mensaje_fuera_de_contrato_se_descarta_sin_bloquear_la_cola(seeded):
     assert attrs["ApproximateNumberOfMessages"] == "0" and attrs["ApproximateNumberOfMessagesNotVisible"] == "0"
 
 
-@pytest.mark.parametrize("role,expected", [("REVIEWER", 403), ("COORDINATOR", 202)])
+@pytest.mark.parametrize("role,expected", [("COMITE_TACTICO", 403), ("DIRECTOR", 403), ("ADMINISTRADOR", 202)])
 def test_permisos_en_la_pila_real(seeded, role, expected):
     res = seeded.call("POST", "/schedule-requests", role=role, json={"period": "2027-1", "time_limit_seconds": 5})
     assert res.status_code == expected
