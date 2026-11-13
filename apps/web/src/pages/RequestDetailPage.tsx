@@ -23,8 +23,8 @@ export function RequestDetailPage({ pollMs = 3000 }: { pollMs?: number }) {
   return (
     <>
       <section className="panel">
-        <p><Link to="/">← Solicitudes</Link></p>
-        <h2>Solicitud {data.period} <StatusBadge status={data.status} /></h2>
+        <p><Link to="/requests">← Horarios</Link></p>
+        <h2>Solicitud {data.period} · {data.program ?? 'Institucional'} <StatusBadge status={data.status} /></h2>
         <p className="muted">
           {data.alternatives_requested} alternativas · perfil {data.optimization_profile} · límite {data.time_limit_seconds}s ·
           snapshot <code>{data.snapshot_sha256.slice(0, 12)}</code> · solicitó {data.requested_by}
