@@ -7,15 +7,15 @@ Administración decida, se actualiza la tabla y, si cambia la arquitectura, se c
 |---|---|---|---|
 | D1 | Ámbito de generación (programa / facultad / universidad) | Administración | Un programa |
 | D2 | Clasificación dura/blanda | Administración | `catalogo-reglas.md` v1 |
-| D3 | Autoridad para excepciones | Administración | Rol `APPROVER` |
+| D3 | Autoridad para excepciones | Administración | ✅ Comité táctico (ADR-0008) |
 | D4 | Fuentes oficiales de datos | Conjunto | CSV exportados por cada responsable |
 | D5 | APIs o archivos | Software + Datos | Solo archivos en el MVP |
-| D6 | Registro de disponibilidad docente | Administración | CSV consolidado por coordinación |
+| D6 | Registro de disponibilidad docente | Administración | ✅ El docente la registra en el panel; CSV como carga inicial (ADR-0008) |
 | D7 | Volumen (grupos, docentes, aulas) | Datos + Administración | ≤ 120 grupos, 60 docentes, 30 aulas |
 | D8 | Cantidad de alternativas | Conjunto | 4 por defecto, mínimo útil 3 |
 | D9 | Definición de diversidad | Administración + Optimización | ≥ 30 % de sesiones en franja distinta |
 | D10 | Definición de holgura | Administración + Optimización | Métricas multidimensionales (`docs/architecture/metricas.md`) |
-| D11 | Roles y permisos | Administración + Software | `actores.md` |
+| D11 | Roles y permisos | Administración + Software | ✅ 5 actores institucionales (`actores.md`, ADR-0008) |
 | D12 | Frecuencia de generación | Administración | Una vez por período + regeneraciones puntuales |
 | D13 | Tiempo máximo de ejecución | Conjunto | 120 s por alternativa |
 | D14 | Tecnología de despliegue | Software / Cloud | AWS, ECS Fargate; infraestructura con Terraform (ADR-0007) |

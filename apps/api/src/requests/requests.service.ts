@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { audit } from '../database/audit';
-import { DatabaseService } from '../database/database.service';
+import { DatabaseService, Queryable } from '../database/database.service';
+import { offerStatuses } from '../offers/offer';
 import { SnapshotBuilder } from './snapshot.builder';
 import { transitionRequest } from './state-machine';
 
@@ -31,6 +32,7 @@ export class RequestsService {
   async create(input: CreateRequest, actor: string): Promise<CreatedRequest> {
     return this.db.tx(async (tx) => {
       const snap = await this.snapshots.build(tx, input.period, input.program);
+      await this.assertOffersConsolidated(tx, snap.periodId, input.program);
       // Mismo contenido ⇒ mismo snapshot (content_sha256 es único); se reutiliza
       await tx.query(
         `INSERT INTO input_snapshots(period_id, rule_version_id, content_sha256, problem, created_by)
@@ -60,20 +62,42 @@ export class RequestsService {
     });
   }
 
-  async list(period?: string) {
+  /**
+   * Flujo de actores (SCRUM-43): el DIRECTOR consolida la oferta antes de que el ADMINISTRADOR genere.
+   * Cada programa incluido en la generación debe tener su oferta consolidada y sin cambios posteriores.
+   */
+  private async assertOffersConsolidated(tx: Queryable, periodId: string, programCode?: string) {
+    let programId: string | null = null;
+    if (programCode) {
+      const { rows: [p] } = await tx.query<{ id: string }>('SELECT id FROM programs WHERE code = $1', [programCode]);
+      programId = p?.id ?? null;
+    }
+    const pending = (await offerStatuses(tx, periodId, programId)).filter((s) => s.state !== 'CONSOLIDADA');
+    if (pending.length > 0) {
+      throw new ConflictException({
+        message: `Falta la consolidación de la oferta por el director: ${pending.map((p) => `${p.program} (${p.state})`).join(', ')}`,
+        pending: pending.map((p) => ({ program: p.program, state: p.state })),
+      });
+    }
+  }
+
+  /** `programScope`: si se indica (DIRECTOR), solo las solicitudes de ese programa y las institucionales. */
+  async list(period?: string, programScope?: string | null) {
     return this.db.query(
-      `SELECT r.id, p.code AS period, r.status, r.alternatives_requested, r.optimization_profile, r.time_limit_seconds,
-              r.requested_by, r.created_at, r.updated_at
-         FROM schedule_requests r JOIN academic_periods p ON p.id = r.period_id
-        WHERE $1::text IS NULL OR p.code = $1 ORDER BY r.created_at DESC LIMIT 100`,
-      [period ?? null],
+      `SELECT r.id, p.code AS period, pr.code AS program, r.status, r.alternatives_requested, r.optimization_profile,
+              r.time_limit_seconds, r.requested_by, r.created_at, r.updated_at
+         FROM schedule_requests r JOIN academic_periods p ON p.id = r.period_id LEFT JOIN programs pr ON pr.id = r.program_id
+        WHERE ($1::text IS NULL OR p.code = $1) AND ($2::uuid IS NULL OR r.program_id IS NULL OR r.program_id = $2)
+        ORDER BY r.created_at DESC LIMIT 100`,
+      [period ?? null, programScope ?? null],
     );
   }
 
   async get(id: string) {
     const [req] = await this.db.query(
-      `SELECT r.*, p.code AS period, s.content_sha256 AS snapshot_sha256
+      `SELECT r.*, p.code AS period, pr.code AS program, s.content_sha256 AS snapshot_sha256
          FROM schedule_requests r JOIN academic_periods p ON p.id = r.period_id JOIN input_snapshots s ON s.id = r.snapshot_id
+         LEFT JOIN programs pr ON pr.id = r.program_id
         WHERE r.id = $1`,
       [id],
     );

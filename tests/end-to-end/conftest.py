@@ -16,6 +16,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 ADMIN = os.environ.get("TEST_DATABASE_ADMIN_URL")
+DIRECTOR = "direccion.sis@unbosque.edu.co"
 API_DIST = ROOT / "apps/api/dist/main.js"
 
 try:
@@ -58,7 +59,14 @@ class Stack:
             dlq_url,
         )
 
-    def call(self, method: str, path: str, role: str = "ADMIN", actor: str = "e2e@unbosque.edu.co", **kw):
+    def call(
+        self,
+        method: str,
+        path: str,
+        role: str = "ADMINISTRADOR,COMITE_TACTICO",
+        actor: str = "e2e@unbosque.edu.co",
+        **kw,
+    ):
         headers = {"x-actor": actor, "x-roles": role, **kw.pop("headers", {})}
         return requests.request(method, f"{self.api}/v1{path}", headers=headers, timeout=30, **kw)
 
@@ -70,6 +78,12 @@ class Stack:
                 return body
             time.sleep(1)
         raise AssertionError(f"La solicitud {request_id} no llegó a {targets}; último estado {body['status']}")
+
+    def consolidate_offer(self, notes: str = "Oferta revisada") -> None:
+        res = self.call(
+            "POST", "/offers/consolidate", role="", actor=DIRECTOR, json={"period": "2027-1", "notes": notes}
+        )
+        assert res.status_code == 201, res.text
 
     def sql(self, query: str, params=()):
         with psycopg.connect(self.db_url) as c:
@@ -175,13 +189,13 @@ def seeded(stack):
     stack.call(
         "POST",
         "/academic-periods",
-        role="DATA_STEWARD",
+        role="ADMINISTRADOR",
         json={"code": "2027-1", "starts_on": "2027-01-25", "ends_on": "2027-06-05"},
     )
     stack.call(
         "POST",
         "/programs",
-        role="DATA_STEWARD",
+        role="ADMINISTRADOR",
         json={"code": "SIS", "name": "Ingeniería de Sistemas", "faculty": "Ingeniería"},
     )
     for entity in (
@@ -197,8 +211,17 @@ def seeded(stack):
         res = stack.call(
             "POST",
             f"/imports/{entity}?period=2027-1",
-            role="DATA_STEWARD",
+            role="ADMINISTRADOR",
             files={"file": (path.name, path.read_bytes(), "text/csv")},
         )
         assert res.json()["status"] == "APPLIED", res.text
+    # SCRUM-43: el director del programa consolida la oferta antes de que el administrador genere
+    res = stack.call(
+        "PUT",
+        f"/users/{DIRECTOR}",
+        role="ADMINISTRADOR",
+        json={"roles": ["DIRECTOR"], "program": "SIS"},
+    )
+    assert res.status_code == 200, res.text
+    stack.consolidate_offer()
     return stack

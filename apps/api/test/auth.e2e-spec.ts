@@ -30,7 +30,7 @@ describeDb('Autenticación con JWT de Cognito (SCRUM-31)', () => {
     await db.drop();
     server.close();
     delete process.env.COGNITO_ISSUER;
-    process.env.DEV_DEFAULT_ROLES = 'ADMIN';
+    process.env.DEV_DEFAULT_ROLES = 'ADMINISTRADOR,COMITE_TACTICO';
   });
 
   const http = () => request(app.getHttpServer());
@@ -41,21 +41,39 @@ describeDb('Autenticación con JWT de Cognito (SCRUM-31)', () => {
 
   it('sin token o con token inválido responde 401 (las cabeceras de desarrollo se ignoran)', async () => {
     await http().get('/v1/schedule-requests').expect(401);
-    await http().get('/v1/schedule-requests').set('x-actor', 'yo').set('x-roles', 'ADMIN').expect(401);
+    await http().get('/v1/schedule-requests').set('x-actor', 'yo').set('x-roles', 'ADMINISTRADOR').expect(401);
     await http().get('/v1/schedule-requests').set('authorization', 'Bearer basura').expect(401);
-    const foreign = await sign({ email: 'x@y.co', 'cognito:groups': ['ADMIN'] }, { issuer: 'https://otro-emisor' });
+    const foreign = await sign({ email: 'x@y.co', 'cognito:groups': ['ADMINISTRADOR'] }, { issuer: 'https://otro-emisor' });
     await http().get('/v1/schedule-requests').set('authorization', `Bearer ${foreign}`).expect(401);
     const expired = await sign({ email: 'x@y.co' }, { exp: '-1m' });
     await http().get('/v1/schedule-requests').set('authorization', `Bearer ${expired}`).expect(401);
   });
 
   it('usa cognito:groups como roles y el correo como actor', async () => {
-    const reviewer = await sign({ email: 'secretaria@unbosque.edu.co', 'cognito:groups': ['REVIEWER'] });
-    await http().get('/v1/schedule-requests').set('authorization', `Bearer ${reviewer}`).expect(200);
-    await http().post('/v1/academic-periods').set('authorization', `Bearer ${reviewer}`)
+    const committee = await sign({ email: 'comite@unbosque.edu.co', 'cognito:groups': ['COMITE_TACTICO'] });
+    await http().get('/v1/schedule-requests').set('authorization', `Bearer ${committee}`).expect(200);
+    await http().post('/v1/academic-periods').set('authorization', `Bearer ${committee}`)
       .send({ code: '2027-1', starts_on: '2027-01-25', ends_on: '2027-06-05' }).expect(403);
-    const steward = await sign({ email: 'datos@unbosque.edu.co', 'cognito:groups': ['DATA_STEWARD', 'GRUPO_DESCONOCIDO'] });
-    await http().post('/v1/academic-periods').set('authorization', `Bearer ${steward}`)
+    const admin = await sign({ email: 'Admin@UnBosque.edu.co', 'cognito:groups': ['ADMINISTRADOR', 'GRUPO_DESCONOCIDO'] });
+    await http().post('/v1/academic-periods').set('authorization', `Bearer ${admin}`)
       .send({ code: '2027-1', starts_on: '2027-01-25', ends_on: '2027-06-05' }).expect(201);
+    const me = await http().get('/v1/me').set('authorization', `Bearer ${admin}`).expect(200);
+    expect(me.body).toMatchObject({ email: 'admin@unbosque.edu.co', roles: ['ADMINISTRADOR'] });
+  });
+
+  it('combina los grupos de Cognito con el directorio y respeta la desactivación', async () => {
+    const admin = await sign({ email: 'admin@unbosque.edu.co', 'cognito:groups': ['ADMINISTRADOR'] });
+    await http().post('/v1/programs').set('authorization', `Bearer ${admin}`).send({ code: 'MED', name: 'Medicina', faculty: 'Medicina' }).expect(201);
+    // Sin grupos en Cognito: el actor y su alcance vienen del directorio
+    const plain = await sign({ email: 'direccion.med@unbosque.edu.co' });
+    await http().get('/v1/schedule-requests').set('authorization', `Bearer ${plain}`).expect(403);
+    await http().put('/v1/users/direccion.med@unbosque.edu.co').set('authorization', `Bearer ${admin}`)
+      .send({ roles: ['DIRECTOR'], program: 'MED' }).expect(200);
+    const me = await http().get('/v1/me').set('authorization', `Bearer ${plain}`).expect(200);
+    expect(me.body).toMatchObject({ roles: ['DIRECTOR'], program: 'MED' });
+    await http().get('/v1/schedule-requests').set('authorization', `Bearer ${plain}`).expect(200);
+    await http().put('/v1/users/direccion.med@unbosque.edu.co').set('authorization', `Bearer ${admin}`)
+      .send({ roles: ['DIRECTOR'], program: 'MED', active: false }).expect(200);
+    await http().get('/v1/me').set('authorization', `Bearer ${plain}`).expect(403);
   });
 });

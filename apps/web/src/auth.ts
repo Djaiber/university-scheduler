@@ -2,7 +2,8 @@
  * Inicio de sesión con Cognito (Authorization Code + PKCE, cliente público definido en terraform/modules/auth).
  * Se activa si existen VITE_COGNITO_DOMAIN y VITE_COGNITO_CLIENT_ID; si no, el panel usa la identidad de desarrollo.
  */
-import type { Role, Session } from './session';
+import { ROLES, type Role } from '@us/api-client';
+import type { Session } from './session';
 
 const env = import.meta.env;
 export const cognito = env.VITE_COGNITO_DOMAIN && env.VITE_COGNITO_CLIENT_ID
@@ -34,8 +35,10 @@ export function decodeJwt(token: string): Record<string, unknown> {
 
 export function sessionFromIdToken(idToken: string): Session {
   const claims = decodeJwt(idToken);
-  const groups = Array.isArray(claims['cognito:groups']) ? (claims['cognito:groups'] as Role[]) : [];
-  return { actor: String(claims.email ?? claims.sub), roles: groups, token: idToken };
+  const groups = Array.isArray(claims['cognito:groups'])
+    ? (claims['cognito:groups'] as string[]).filter((g): g is Role => (ROLES as readonly string[]).includes(g))
+    : [];
+  return { actor: String(claims.email ?? claims.sub).toLowerCase(), roles: groups, token: idToken };
 }
 
 export async function completeLogin(search: string): Promise<Session> {

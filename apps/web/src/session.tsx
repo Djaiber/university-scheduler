@@ -1,8 +1,17 @@
-import { createContext, ReactNode, useContext, useMemo, useState } from 'react';
-import { ApiClient } from '@us/api-client';
+import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { ApiClient, Me, ROLES, Role } from '@us/api-client';
 
-export const ROLES = ['DATA_STEWARD', 'COORDINATOR', 'REVIEWER', 'APPROVER', 'PUBLISHER', 'ADMIN'] as const;
-export type Role = (typeof ROLES)[number];
+export { ROLES };
+export type { Role };
+
+/** Nombre visible de cada actor institucional. */
+export const ROLE_LABELS: Record<Role, string> = {
+  ADMINISTRADOR: 'Administrador',
+  COMITE_TACTICO: 'Comité táctico',
+  DIRECTOR: 'Director',
+  DOCENTE: 'Docente',
+  ESTUDIANTE: 'Estudiante',
+};
 
 export interface Session {
   actor: string;
@@ -11,20 +20,31 @@ export interface Session {
 }
 
 const KEY = 'scheduler.session';
-const DEFAULT: Session = { actor: 'coordinacion@unbosque.edu.co', roles: ['COORDINATOR'], token: null };
+const DEFAULT: Session = { actor: 'admin@unbosque.edu.co', roles: ['ADMINISTRADOR'], token: null };
 
 function load(): Session {
   try {
-    return { ...DEFAULT, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };
+    const s = { ...DEFAULT, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') } as Session;
+    // Sesiones guardadas con los roles técnicos anteriores se descartan
+    return { ...s, roles: s.roles.filter((r) => (ROLES as readonly string[]).includes(r)) };
   } catch {
     return DEFAULT;
   }
 }
 
-const Ctx = createContext<{ session: Session; setSession: (s: Session) => void; api: ApiClient } | null>(null);
+interface Ctx {
+  session: Session;
+  setSession: (s: Session) => void;
+  api: ApiClient;
+  /** Identidad resuelta por la API (roles efectivos y alcance); null mientras carga o sin sesión. */
+  me: Me | null;
+}
+
+const SessionCtx = createContext<Ctx | null>(null);
 
 export function SessionProvider({ children, baseUrl = '/v1' }: { children: ReactNode; baseUrl?: string }) {
   const [session, setState] = useState<Session>(load);
+  const [me, setMe] = useState<Me | null>(null);
   const setSession = (s: Session) => {
     setState(s);
     try {
@@ -42,13 +62,31 @@ export function SessionProvider({ children, baseUrl = '/v1' }: { children: React
       ),
     [baseUrl, session],
   );
-  return <Ctx.Provider value={{ session, setSession, api }}>{children}</Ctx.Provider>;
+
+  useEffect(() => {
+    let alive = true;
+    setMe(null);
+    if (!session.actor) return;
+    api.me().then((m) => alive && setMe(m)).catch(() => alive && setMe(null));
+    return () => {
+      alive = false;
+    };
+  }, [api, session.actor]);
+
+  // Roles efectivos: los de la sesión (grupos de Cognito o identidad de desarrollo) ∪ los del directorio
+  const effective = useMemo<Session>(
+    () => ({ ...session, roles: [...new Set([...session.roles, ...(me?.roles ?? [])])] }),
+    [session, me],
+  );
+
+  return <SessionCtx.Provider value={{ session: effective, setSession, api, me }}>{children}</SessionCtx.Provider>;
 }
 
 export function useSession() {
-  const ctx = useContext(Ctx);
+  const ctx = useContext(SessionCtx);
   if (!ctx) throw new Error('useSession fuera de SessionProvider');
   return ctx;
 }
 
-export const hasRole = (s: Session, ...roles: Role[]) => s.roles.some((r) => roles.includes(r) || r === 'ADMIN');
+/** ¿La sesión tiene alguno de estos actores? No hay un rol comodín: cada pantalla declara los suyos. */
+export const hasRole = (s: Session, ...roles: Role[]) => s.roles.some((r) => roles.includes(r));

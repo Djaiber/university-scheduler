@@ -17,8 +17,8 @@ function as(roles: string[]) {
 describe('GovernancePanel', () => {
   beforeEach(() => localStorage.clear());
 
-  it('revisor: envía a aprobación; deshabilitado con violaciones duras', async () => {
-    as(['REVIEWER']);
+  it('comité táctico: envía a aprobación; deshabilitado con violaciones duras', async () => {
+    as(['COMITE_TACTICO']);
     const { calls } = mockApi({ 'GET /v1/schedule-requests/:id/governance': emptyGov, 'POST /v1/revisions/:id/reviews': {} });
     const onChange = vi.fn();
     const { rerender } = render(<SessionProvider><GovernancePanel alt={alt('PENDING_REVIEW', 2)} onChange={onChange} /></SessionProvider>);
@@ -29,8 +29,8 @@ describe('GovernancePanel', () => {
     expect(onChange).toHaveBeenCalled();
   });
 
-  it('aprobador: aprueba solo cuando está pendiente de aprobación y muestra errores de la API', async () => {
-    as(['APPROVER']);
+  it('comité táctico: aprueba solo cuando está pendiente de aprobación y muestra errores de la API', async () => {
+    as(['COMITE_TACTICO']);
     mockApi({
       'GET /v1/schedule-requests/:id/governance': emptyGov,
       'POST /v1/revisions/:id/approvals': () => new Response(JSON.stringify({ message: 'Quien edita una revisión no puede aprobarla' }), { status: 409 }),
@@ -39,10 +39,20 @@ describe('GovernancePanel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Aprobar revisión 2' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('no puede aprobarla');
     expect(screen.queryByRole('button', { name: 'Enviar a aprobación' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Publicar' })).not.toBeInTheDocument();
   });
 
-  it('publicador: publica la aprobación vigente y ve la trazabilidad', async () => {
-    as(['PUBLISHER']);
+  it('administrador: no evalúa ni aprueba', async () => {
+    as(['ADMINISTRADOR']);
+    mockApi({ 'GET /v1/schedule-requests/:id/governance': emptyGov });
+    render(<SessionProvider><GovernancePanel alt={alt('PENDING_APPROVAL')} onChange={() => undefined} /></SessionProvider>);
+    expect(screen.queryByRole('button', { name: /Aprobar/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Enviar a aprobación' })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('pendiente de la decisión del comité táctico');
+  });
+
+  it('administrador: publica la aprobación vigente y ve la trazabilidad', async () => {
+    as(['ADMINISTRADOR']);
     const { calls } = mockApi({
       'GET /v1/schedule-requests/:id/governance': {
         reviews: [{ id: 'r', revision_id: 'rev2', revision_no: 2, reviewer: 'sec', decision: 'SEND_TO_APPROVAL', comment: 'ok', created_at: '2026-11-06T10:00:00Z' }],

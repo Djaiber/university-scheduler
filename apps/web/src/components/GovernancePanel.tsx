@@ -2,7 +2,18 @@ import { useEffect, useState } from 'react';
 import type { AlternativeDetail, GovernanceSummary } from '@us/api-client';
 import { hasRole, useSession } from '../session';
 
-/** Acciones de gobierno según rol y estado (§11): enviar a aprobación, pedir ajustes, aprobar, publicar. */
+const WAITING: Record<string, string> = {
+  PENDING_REVIEW: 'Pendiente de la evaluación del comité táctico.',
+  NEEDS_ADJUSTMENTS: 'El comité pidió ajustes: el administrador debe guardar una nueva revisión.',
+  PENDING_APPROVAL: 'Enviada a aprobación: pendiente de la decisión del comité táctico.',
+  APPROVED: 'Aprobada por el comité: pendiente de publicación por el administrador.',
+  PUBLISHED: 'Publicada.',
+};
+
+/**
+ * Acciones de gobierno según actor y estado (§11, SCRUM-43): el COMITÉ TÁCTICO evalúa (envía a aprobación o
+ * pide ajustes) y aprueba; el ADMINISTRADOR publica lo aprobado.
+ */
 export function GovernancePanel({ alt, onChange }: { alt: AlternativeDetail; onChange: () => void }) {
   const { api, session } = useSession();
   const [gov, setGov] = useState<GovernanceSummary | null>(null);
@@ -17,6 +28,9 @@ export function GovernancePanel({ alt, onChange }: { alt: AlternativeDetail; onC
   if (!rev) return null;
   const st = alt.request_status;
   const activeApproval = gov?.approvals.find((a) => a.revision_id === rev.id && !a.revoked_at);
+  const canReview = hasRole(session, 'COMITE_TACTICO') && ['PENDING_REVIEW', 'NEEDS_ADJUSTMENTS'].includes(st);
+  const canApprove = hasRole(session, 'COMITE_TACTICO') && st === 'PENDING_APPROVAL';
+  const canPublish = hasRole(session, 'ADMINISTRADOR') && st === 'APPROVED' && Boolean(activeApproval);
 
   const run = async (fn: () => Promise<unknown>) => {
     setError(null);
@@ -31,16 +45,21 @@ export function GovernancePanel({ alt, onChange }: { alt: AlternativeDetail; onC
 
   return (
     <section className="panel" aria-label="Gobierno">
-      <h3>Revisión y aprobación</h3>
+      <p className="eyebrow">Comité táctico</p>
+      <h3>Evaluación y aprobación</h3>
       <p className="muted">
         Se aprueba la revisión exacta {rev.revision_no} (hash <code>{rev.content_sha256.slice(0, 12)}</code>). Cualquier cambio posterior
         crea otra revisión y revoca la aprobación.
       </p>
+      {!(canReview || canApprove || canPublish) && <p className="muted" role="status">{WAITING[st] ?? ''}</p>}
+      {(canReview || canApprove || canPublish) && (
       <div className="row">
-        <label style={{ flex: 1 }}>Comentario
-          <input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Observaciones para el registro" />
-        </label>
-        {hasRole(session, 'REVIEWER', 'COORDINATOR') && ['PENDING_REVIEW', 'NEEDS_ADJUSTMENTS'].includes(st) && (
+        {(canReview || canApprove) && (
+          <label style={{ flex: 1 }}>Comentario
+            <input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Observaciones para el registro" />
+          </label>
+        )}
+        {canReview && (
           <>
             <button disabled={rev.hard_violations > 0} title={rev.hard_violations > 0 ? 'Tiene violaciones duras' : ''}
               onClick={() => void run(() => api.review(rev.id, 'SEND_TO_APPROVAL', comment || undefined))}>Enviar a aprobación</button>
@@ -50,13 +69,14 @@ export function GovernancePanel({ alt, onChange }: { alt: AlternativeDetail; onC
             )}
           </>
         )}
-        {hasRole(session, 'APPROVER') && st === 'PENDING_APPROVAL' && (
+        {canApprove && (
           <button onClick={() => void run(() => api.approve(rev.id, comment || undefined))}>Aprobar revisión {rev.revision_no}</button>
         )}
-        {hasRole(session, 'PUBLISHER') && st === 'APPROVED' && activeApproval && (
-          <button onClick={() => void run(() => api.publish(activeApproval.id))}>Publicar</button>
+        {canPublish && (
+          <button className="accent" onClick={() => void run(() => api.publish(activeApproval!.id))}>Publicar</button>
         )}
       </div>
+      )}
       {error && <p className="error" role="alert">{error}</p>}
       {gov && (gov.reviews.length > 0 || gov.approvals.length > 0) && (
         <table aria-label="Trazabilidad de gobierno" style={{ marginTop: 12 }}>
