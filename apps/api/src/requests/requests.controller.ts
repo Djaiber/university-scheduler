@@ -1,5 +1,8 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
-import { Roles } from '../auth/decorators';
+import { AuthUser, directorProgram } from '../auth/auth.types';
+import { CurrentUser, Roles } from '../auth/decorators';
+import { assertRequestVisible } from '../auth/scope';
+import { DatabaseService } from '../database/database.service';
 import { Actor } from '../common/actor.decorator';
 import { SchemaValidationPipe } from '../common/schema-validation.pipe';
 import { JobPublisher } from '../queue/job-publisher.service';
@@ -22,12 +25,12 @@ const createSchema = {
 
 @Controller('schedule-requests')
 export class RequestsController {
-  constructor(private readonly requests: RequestsService, private readonly publisher: JobPublisher) {}
+  constructor(private readonly requests: RequestsService, private readonly publisher: JobPublisher, private readonly db: DatabaseService) {}
 
-  /** 202: la generación es asíncrona; el cliente consulta GET /schedule-requests/:id (RF-15). */
+  /** 202: la generación es asíncrona; el cliente consulta GET /schedule-requests/:id (RF-15). Solo el ADMINISTRADOR lanza. */
   @Post()
   @HttpCode(202)
-  @Roles('COORDINATOR')
+  @Roles('ADMINISTRADOR')
   async create(@Body(new SchemaValidationPipe<CreateRequest>(createSchema)) body: CreateRequest, @Actor() actor: string) {
     const created = await this.requests.create(body, actor);
     // Tras el COMMIT; si falla, el barrido del outbox lo reintenta y la solicitud no se pierde
@@ -36,17 +39,20 @@ export class RequestsController {
   }
 
   @Get()
-  list(@Query('period') period?: string) {
-    return this.requests.list(period);
+  @Roles('ADMINISTRADOR', 'COMITE_TACTICO', 'DIRECTOR')
+  list(@Query('period') period: string | undefined, @CurrentUser() user: AuthUser) {
+    return this.requests.list(period, directorProgram(user));
   }
 
   @Get(':id')
-  get(@Param('id', new ParseUUIDPipe()) id: string) {
+  @Roles('ADMINISTRADOR', 'COMITE_TACTICO', 'DIRECTOR')
+  async get(@Param('id', new ParseUUIDPipe()) id: string, @CurrentUser() user: AuthUser) {
+    await assertRequestVisible(this.db.pool, user, id);
     return this.requests.get(id);
   }
 
   @Post(':id/cancel')
-  @Roles('COORDINATOR')
+  @Roles('ADMINISTRADOR')
   cancel(@Param('id', new ParseUUIDPipe()) id: string, @Actor() actor: string, @Body() body: { reason?: string }) {
     return this.requests.cancel(id, actor, body?.reason);
   }

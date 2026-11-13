@@ -1,5 +1,8 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post } from '@nestjs/common';
-import { Roles } from '../auth/decorators';
+import { AuthUser } from '../auth/auth.types';
+import { CurrentUser, Roles } from '../auth/decorators';
+import { assertAlternativeVisible, assertRequestVisible } from '../auth/scope';
+import { DatabaseService } from '../database/database.service';
 import { Actor } from '../common/actor.decorator';
 import { SchemaValidationPipe } from '../common/schema-validation.pipe';
 import { AlternativesService } from './alternatives.service';
@@ -21,21 +24,29 @@ const previewSchema = { type: 'object', additionalProperties: false, required: [
 
 @Controller()
 export class AlternativesController {
-  constructor(private readonly alternatives: AlternativesService, private readonly revisionsSvc: RevisionsService) {}
+  constructor(
+    private readonly alternatives: AlternativesService,
+    private readonly revisionsSvc: RevisionsService,
+    private readonly db: DatabaseService,
+  ) {}
 
   @Get('alternatives/:id')
-  get(@Param('id', new ParseUUIDPipe()) id: string) {
+  @Roles('ADMINISTRADOR', 'COMITE_TACTICO', 'DIRECTOR')
+  async get(@Param('id', new ParseUUIDPipe()) id: string, @CurrentUser() user: AuthUser) {
+    await assertAlternativeVisible(this.db.pool, user, id);
     return this.alternatives.get(id);
   }
 
   @Get('alternatives/:id/revisions')
-  revisions(@Param('id', new ParseUUIDPipe()) id: string) {
+  @Roles('ADMINISTRADOR', 'COMITE_TACTICO', 'DIRECTOR')
+  async revisions(@Param('id', new ParseUUIDPipe()) id: string, @CurrentUser() user: AuthUser) {
+    await assertAlternativeVisible(this.db.pool, user, id);
     return this.alternatives.revisions(id);
   }
 
-  /** Guarda un ajuste manual como revisión nueva, revalidada (RF-10). */
+  /** Guarda un ajuste manual (drag-and-drop del panel) como revisión nueva, revalidada (RF-10). Solo ADMINISTRADOR. */
   @Post('alternatives/:id/revisions')
-  @Roles('COORDINATOR')
+  @Roles('ADMINISTRADOR')
   createRevision(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body(new SchemaValidationPipe<NewRevision>(revisionSchema)) body: NewRevision,
@@ -44,15 +55,18 @@ export class AlternativesController {
     return this.revisionsSvc.create(id, body, actor);
   }
 
+  /** Revalidación en vivo mientras el ADMINISTRADOR arrastra sesiones; no guarda nada. */
   @Post('alternatives/:id/preview')
-  @Roles('COORDINATOR', 'REVIEWER')
+  @Roles('ADMINISTRADOR')
   @HttpCode(200)
   preview(@Param('id', new ParseUUIDPipe()) id: string, @Body(new SchemaValidationPipe<{ changes: Change[] }>(previewSchema)) body: { changes: Change[] }) {
     return this.revisionsSvc.preview(id, body.changes);
   }
 
   @Get('schedule-requests/:id/comparison')
-  comparison(@Param('id', new ParseUUIDPipe()) id: string) {
+  @Roles('ADMINISTRADOR', 'COMITE_TACTICO', 'DIRECTOR')
+  async comparison(@Param('id', new ParseUUIDPipe()) id: string, @CurrentUser() user: AuthUser) {
+    await assertRequestVisible(this.db.pool, user, id);
     return this.alternatives.comparison(id);
   }
 }

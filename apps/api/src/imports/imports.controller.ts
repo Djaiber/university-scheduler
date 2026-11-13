@@ -13,12 +13,13 @@ export class ImportsController {
 
   /** Orden recomendado: time_slots → teachers → classrooms → courses → groups → *_availability */
   @Get('templates')
+  @Roles('ADMINISTRADOR')
   templates() {
     return { entities: ENTITIES, dictionary: 'data/templates/DICCIONARIO.md' };
   }
 
   @Post(':entity')
-  @Roles('DATA_STEWARD')
+  @Roles('ADMINISTRADOR')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_BYTES, files: 1 } }))
   async upload(
     @Param('entity') entity: string,
@@ -33,6 +34,7 @@ export class ImportsController {
   }
 
   @Get(':id')
+  @Roles('ADMINISTRADOR')
   get(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.imports.get(id);
   }
