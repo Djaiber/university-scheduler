@@ -42,3 +42,6 @@ tfplan
 
 # Paquetes de sincronización local (git bundle)
 *.bundle
+
+# Datos reales de la universidad (nombres de docentes): nunca al repositorio público
+data/University-Excels/
