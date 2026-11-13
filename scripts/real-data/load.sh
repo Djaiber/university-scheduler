@@ -18,9 +18,10 @@ PERIOD_END="${PERIOD_END:-2026-11-28}"
 AUTH=(-H "authorization: Bearer $TOKEN")
 
 api() { # método ruta [json]
-  local out code
+  local out code data=()
+  [[ -n "${3:-}" ]] && data=(--data "$3")
   out="$(curl -sS -w '\n%{http_code}' -X "$1" "${AUTH[@]}" -H 'content-type: application/json' \
-    ${3:+--data "$3"} "$API_URL$2")"
+    "${data[@]}" "$API_URL$2")"
   code="${out##*$'\n'}"; out="${out%$'\n'*}"
   printf '%s\t%s\n' "$code" "$out"
 }
