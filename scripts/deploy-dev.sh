@@ -239,10 +239,11 @@ Entorno dev desplegado en la cuenta $ACCOUNT ($REGION)
   Cognito:    pool $(tfo cognito_user_pool_id) · dominio $(tfo cognito_domain)
   Imágenes:   $IMAGE_TAG
 
-Siguiente: crear usuarios y asignarlos a grupos (COORDINATOR, REVIEWER, APPROVER…):
+Siguiente: crear el primer administrador (el resto de actores y su alcance se asignan en el panel → Usuarios).
+Grupos: ADMINISTRADOR, COMITE_TACTICO, DIRECTOR, DOCENTE, ESTUDIANTE:
   aws cognito-idp admin-create-user --user-pool-id $(tfo cognito_user_pool_id) --username <correo> \\
     --user-attributes Name=email,Value=<correo> Name=email_verified,Value=true
-  aws cognito-idp admin-add-user-to-group --user-pool-id $(tfo cognito_user_pool_id) --username <correo> --group-name COORDINATOR
+  aws cognito-idp admin-add-user-to-group --user-pool-id $(tfo cognito_user_pool_id) --username <correo> --group-name ADMINISTRADOR
 Para apagar dev y no pagar: terraform -chdir=terraform/environments/dev destroy -var image_tag=$IMAGE_TAG
 ────────────────────────────────────────────────────────────
 EOF
