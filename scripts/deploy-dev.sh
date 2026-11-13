@@ -7,11 +7,14 @@
 #   0. Prerrequisitos y verificación de la cuenta (debe terminar en EXPECTED_ACCOUNT_SUFFIX)
 #   1. Bootstrap del estado remoto (S3 + DynamoDB)
 #   2. Repositorios ECR (apply dirigido)
-#   3. Imágenes ARM64 de API y worker → ECR (etiqueta = SHA del commit)
+#   3. Imágenes ARM64 de API y worker → ECR (etiqueta = SHA del commit), construidas en AWS CodeBuild
 #   4. terraform plan + confirmación + apply del entorno completo
 #   5. Migraciones como tarea única de ECS
-#   6. Panel web → S3 + invalidación de CloudFront
+#   6. Panel web (npm local) → S3 + invalidación de CloudFront
 #   7. Prueba de humo: GET /v1/health a través de CloudFront
+#
+# No requiere Docker local: las imágenes se construyen en un proyecto CodeBuild ARM temporal
+# (rol IAM + bucket de fuentes efímeros que se eliminan al terminar el paso 3).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -31,9 +34,8 @@ tfo() { terraform -chdir="$ENV_DIR" output -raw "$1"; }
 
 # ---------------------------------------------------------------- 0
 step "0/7 Prerrequisitos y cuenta"
-for bin in aws terraform docker git curl; do command -v "$bin" >/dev/null || die "Falta '$bin' en el PATH"; done
-docker info >/dev/null 2>&1 || die "Docker no está corriendo (abra Docker Desktop)"
-docker buildx version >/dev/null 2>&1 || die "Se necesita docker buildx"
+for bin in aws terraform git curl node npm; do command -v "$bin" >/dev/null || die "Falta '$bin' en el PATH"; done
+[[ "$(node -p 'process.versions.node.split(".")[0]')" -ge 20 ]] || die "Se necesita Node.js >= 20"
 terraform version | head -1
 
 ACCOUNT="$(aws sts get-caller-identity --query Account --output text)" || die "No hay sesión válida para el perfil $AWS_PROFILE (¿aws sso login --profile $AWS_PROFILE?)"
@@ -72,19 +74,111 @@ ECR_WORKER="$(terraform -chdir="$ENV_DIR" state show -no-color 'module.platform.
 ok "API → $ECR_API · worker → $ECR_WORKER"
 
 # ---------------------------------------------------------------- 3
-step "3/7 Imágenes ARM64"
-aws ecr get-login-password | docker login --username AWS --password-stdin "$REGISTRY" >/dev/null
-push_if_missing() { # repo dockerfile
-  local repo="$1" dockerfile="$2" name="${1##*/}"
-  if aws ecr describe-images --repository-name "${repo#*/}" --image-ids imageTag="$IMAGE_TAG" >/dev/null 2>&1; then
-    ok "$name:$IMAGE_TAG ya existe en ECR"
-  else
-    docker buildx build --platform linux/arm64 -f "$ROOT/$dockerfile" -t "$repo:$IMAGE_TAG" --push "$ROOT"
-    ok "$name:$IMAGE_TAG publicada"
+step "3/7 Imágenes ARM64 (AWS CodeBuild)"
+image_exists() { aws ecr describe-images --repository-name "${1#*/}" --image-ids imageTag="$IMAGE_TAG" >/dev/null 2>&1; }
+BUILD_TARGETS=""
+image_exists "$ECR_API" && ok "api:$IMAGE_TAG ya existe en ECR" || BUILD_TARGETS+="api "
+image_exists "$ECR_WORKER" && ok "worker:$IMAGE_TAG ya existe en ECR" || BUILD_TARGETS+="worker "
+
+if [[ -n "$BUILD_TARGETS" ]]; then
+  CB_NAME="university-scheduler-dev-image-build"
+  CB_ROLE="$CB_NAME-role"
+  CB_BUCKET="$CB_NAME-src-$ACCOUNT"
+  CB_TMP="$(mktemp -d)"
+  cleanup_codebuild() {
+    set +e
+    aws codebuild delete-project --name "$CB_NAME" >/dev/null 2>&1
+    aws iam delete-role-policy --role-name "$CB_ROLE" --policy-name build >/dev/null 2>&1
+    aws iam delete-role --role-name "$CB_ROLE" >/dev/null 2>&1
+    aws s3 rb "s3://$CB_BUCKET" --force >/dev/null 2>&1
+    rm -rf "$CB_TMP"
+    set -e
+  }
+  trap cleanup_codebuild EXIT
+
+  # Fuente: el commit exacto que da la etiqueta (igual que haría docker build sobre HEAD)
+  aws s3api head-bucket --bucket "$CB_BUCKET" >/dev/null 2>&1 || {
+    if [[ "$REGION" == "us-east-1" ]]; then aws s3api create-bucket --bucket "$CB_BUCKET" >/dev/null
+    else aws s3api create-bucket --bucket "$CB_BUCKET" --create-bucket-configuration "LocationConstraint=$REGION" >/dev/null; fi
+    aws s3api put-public-access-block --bucket "$CB_BUCKET" --public-access-block-configuration \
+      BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+  }
+  git -C "$ROOT" archive --format=zip -o "$CB_TMP/src.zip" HEAD
+  aws s3 cp "$CB_TMP/src.zip" "s3://$CB_BUCKET/src.zip" --only-show-errors
+
+  # Rol con permisos mínimos: leer la fuente, escribir logs y publicar en los dos repositorios ECR
+  aws iam get-role --role-name "$CB_ROLE" >/dev/null 2>&1 || aws iam create-role --role-name "$CB_ROLE" \
+    --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"codebuild.amazonaws.com"},"Action":"sts:AssumeRole"}]}' >/dev/null
+  cat > "$CB_TMP/policy.json" <<EOF
+{"Version":"2012-10-17","Statement":[
+ {"Effect":"Allow","Action":["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],"Resource":"arn:aws:logs:$REGION:$ACCOUNT:log-group:/aws/codebuild/$CB_NAME*"},
+ {"Effect":"Allow","Action":["s3:GetObject","s3:GetObjectVersion"],"Resource":"arn:aws:s3:::$CB_BUCKET/*"},
+ {"Effect":"Allow","Action":"ecr:GetAuthorizationToken","Resource":"*"},
+ {"Effect":"Allow","Action":["ecr:BatchCheckLayerAvailability","ecr:BatchGetImage","ecr:GetDownloadUrlForLayer","ecr:InitiateLayerUpload","ecr:UploadLayerPart","ecr:CompleteLayerUpload","ecr:PutImage"],
+  "Resource":["arn:aws:ecr:$REGION:$ACCOUNT:repository/${ECR_API#*/}","arn:aws:ecr:$REGION:$ACCOUNT:repository/${ECR_WORKER#*/}"]}
+]}
+EOF
+  aws iam put-role-policy --role-name "$CB_ROLE" --policy-name build --policy-document "file://$CB_TMP/policy.json"
+  ROLE_ARN="$(aws iam get-role --role-name "$CB_ROLE" --query Role.Arn --output text)"
+
+  # Compilación nativa en ARM64. Las imágenes base se toman del espejo público de ECR para evitar
+  # el límite de descargas anónimas de Docker Hub desde las IP compartidas de CodeBuild.
+  cat > "$CB_TMP/buildspec.yml" <<'EOF'
+version: 0.2
+env:
+  variables:
+    DOCKER_BUILDKIT: "1"
+phases:
+  pre_build:
+    commands:
+      - aws ecr get-login-password | docker login --username AWS --password-stdin "$REGISTRY"
+      - sed -i -e '/^# syntax=/d' -e 's#^FROM node:#FROM public.ecr.aws/docker/library/node:#' -e 's#^FROM python:#FROM public.ecr.aws/docker/library/python:#' apps/api/Dockerfile services/worker/Dockerfile
+  build:
+    commands:
+      - |
+        for t in $BUILD_TARGETS; do
+          case "$t" in
+            api)    docker build -f apps/api/Dockerfile -t "$ECR_API:$IMAGE_TAG" . && docker push "$ECR_API:$IMAGE_TAG" ;;
+            worker) docker build -f services/worker/Dockerfile -t "$ECR_WORKER:$IMAGE_TAG" . && docker push "$ECR_WORKER:$IMAGE_TAG" ;;
+          esac || exit 1
+        done
+EOF
+  node -e '
+    const fs = require("fs"); const [bucket, role, spec, out] = process.argv.slice(1);
+    fs.writeFileSync(out, JSON.stringify({
+      source: { type: "S3", location: `${bucket}/src.zip`, buildspec: fs.readFileSync(spec, "utf8") },
+      artifacts: { type: "NO_ARTIFACTS" },
+      environment: { type: "ARM_CONTAINER", image: "aws/codebuild/amazonlinux-aarch64-standard:3.0",
+                     computeType: "BUILD_GENERAL1_LARGE", privilegedMode: true },
+      serviceRole: role, timeoutInMinutes: 60,
+    }));' "$CB_BUCKET" "$ROLE_ARN" "$CB_TMP/buildspec.yml" "$CB_TMP/project.json"
+  aws codebuild delete-project --name "$CB_NAME" >/dev/null 2>&1 || true
+  # El rol recién creado tarda unos segundos en ser asumible por CodeBuild (consistencia eventual de IAM)
+  for i in $(seq 1 12); do
+    aws codebuild create-project --name "$CB_NAME" --cli-input-json "file://$CB_TMP/project.json" >/dev/null 2>&1 && break
+    [[ "$i" == 12 ]] && aws codebuild create-project --name "$CB_NAME" --cli-input-json "file://$CB_TMP/project.json" >/dev/null
+    sleep 10
+  done
+
+  BUILD_ID="$(aws codebuild start-build --project-name "$CB_NAME" --environment-variables-override \
+    "name=REGISTRY,value=$REGISTRY" "name=ECR_API,value=$ECR_API" "name=ECR_WORKER,value=$ECR_WORKER" \
+    "name=IMAGE_TAG,value=$IMAGE_TAG" "name=BUILD_TARGETS,value=$BUILD_TARGETS" \
+    --query build.id --output text)"
+  echo "Compilación $BUILD_ID ($BUILD_TARGETS)"
+  while :; do
+    STATUS="$(aws codebuild batch-get-builds --ids "$BUILD_ID" --query 'builds[0].buildStatus' --output text)"
+    [[ "$STATUS" != "IN_PROGRESS" ]] && break
+    PHASE="$(aws codebuild batch-get-builds --ids "$BUILD_ID" --query 'builds[0].currentPhase' --output text)"
+    echo "  … $PHASE"; sleep 20
+  done
+  if [[ "$STATUS" != "SUCCEEDED" ]]; then
+    aws logs tail "/aws/codebuild/$CB_NAME" --since 1h 2>/dev/null | tail -40 || true
+    die "La compilación en CodeBuild terminó en $STATUS"
   fi
-}
-push_if_missing "$ECR_API" apps/api/Dockerfile
-push_if_missing "$ECR_WORKER" services/worker/Dockerfile
+  cleanup_codebuild
+  trap - EXIT
+  ok "Imágenes $IMAGE_TAG publicadas en ECR (CodeBuild eliminado)"
+fi
 
 # ---------------------------------------------------------------- 4
 step "4/7 Plan del entorno dev"
@@ -115,11 +209,11 @@ ok "Migraciones aplicadas"
 
 # ---------------------------------------------------------------- 6
 step "6/7 Panel web"
-rm -rf "$ROOT/build/web"
-docker buildx build -f "$ROOT/apps/web/Dockerfile" \
-  --build-arg "VITE_COGNITO_DOMAIN=$(tfo cognito_domain)" \
-  --build-arg "VITE_COGNITO_CLIENT_ID=$(tfo cognito_web_client_id)" \
-  --output "type=local,dest=$ROOT/build/web" "$ROOT"
+rm -rf "$ROOT/build/web" "$ROOT/apps/web/dist"
+[[ -d "$ROOT/node_modules" ]] || npm --prefix "$ROOT" ci
+( cd "$ROOT" && VITE_COGNITO_DOMAIN="$(tfo cognito_domain)" VITE_COGNITO_CLIENT_ID="$(tfo cognito_web_client_id)" \
+    npm run build -w @us/web )
+mkdir -p "$ROOT/build" && cp -R "$ROOT/apps/web/dist" "$ROOT/build/web"
 BUCKET="$(tfo site_bucket)"
 aws s3 sync "$ROOT/build/web" "s3://$BUCKET" --delete --exclude index.html --cache-control "public,max-age=31536000,immutable"
 aws s3 cp "$ROOT/build/web/index.html" "s3://$BUCKET/index.html" --cache-control "no-cache"

@@ -47,7 +47,7 @@ flowchart LR
 AWS_PROFILE=<perfil> EXPECTED_ACCOUNT_SUFFIX=<últimos dígitos> ALERT_EMAIL=<correo> ./scripts/deploy-dev.sh
 ```
 
-Requiere AWS CLI v2, Terraform ≥ 1.6, Docker con buildx y sesión válida en el perfil. El script verifica
+Requiere AWS CLI v2, Terraform ≥ 1.6, Node.js ≥ 20 y sesión válida en el perfil (no hace falta Docker: las imágenes ARM64 se construyen en un CodeBuild temporal). El script verifica
 que la cuenta sea la esperada, crea el estado remoto, publica las imágenes ARM64, muestra el `plan` y
 **pide confirmación** antes de aplicar, ejecuta las migraciones, publica el panel y hace una prueba de humo.
 Es idempotente: si un paso falla se puede relanzar.
