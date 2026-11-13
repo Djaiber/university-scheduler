@@ -45,8 +45,8 @@ export async function createApp(
   extraEnv: Record<string, string> = {},
   overrides: { provide: unknown; useValue: unknown }[] = [],
 ): Promise<INestApplication> {
-  // DEV_DEFAULT_ROLES=ADMIN: las pruebas que no verifican permisos no necesitan enviar x-roles
-  Object.assign(process.env, { DATABASE_URL: databaseUrl, OUTBOX_INTERVAL_MS: '0', DEV_DEFAULT_ROLES: 'ADMIN', ...extraEnv });
+  // Las pruebas que no verifican permisos actúan como personal (administrador y comité) sin enviar x-roles
+  Object.assign(process.env, { DATABASE_URL: databaseUrl, OUTBOX_INTERVAL_MS: '0', DEV_DEFAULT_ROLES: STAFF_ROLES, ...extraEnv });
   let builder = Test.createTestingModule({ imports: [AppModule] });
   for (const o of overrides) builder = builder.overrideProvider(o.provide).useValue(o.useValue);
   const moduleRef = await builder.compile();
@@ -55,10 +55,16 @@ export async function createApp(
   return app;
 }
 
+export const STAFF_ROLES = 'ADMINISTRADOR,COMITE_TACTICO';
+export const DIRECTOR_SIS = { 'x-actor': 'direccion.sis@unbosque.edu.co', 'x-roles': '' };
+
 const IMPORT_ORDER = ['time_slots', 'teachers', 'classrooms', 'courses', 'groups', 'teacher_availability', 'classroom_availability'];
 
-/** Crea período 2027-1 y programa SIS e importa un escenario de data/sample por la API real. */
-export async function seedScenario(app: INestApplication, scenario = 'small'): Promise<void> {
+/**
+ * Crea período 2027-1 y programa SIS, importa un escenario de data/sample por la API real y, salvo que se
+ * indique lo contrario, registra al director de SIS y consolida la oferta (requisito para generar).
+ */
+export async function seedScenario(app: INestApplication, scenario = 'small', opts: { consolidate?: boolean } = {}): Promise<void> {
   const http = () => request(app.getHttpServer());
   await http().post('/v1/academic-periods').send({ code: '2027-1', starts_on: '2027-01-25', ends_on: '2027-06-05' });
   await http().post('/v1/programs').send({ code: 'SIS', name: 'Ingeniería de Sistemas', faculty: 'Ingeniería' });
@@ -66,6 +72,10 @@ export async function seedScenario(app: INestApplication, scenario = 'small'): P
   for (const entity of IMPORT_ORDER) {
     const res = await http().post(`/v1/imports/${entity}?period=2027-1`).attach('file', readFileSync(path.join(dir, `${entity}.csv`)), `${entity}.csv`);
     if (res.body.status !== 'APPLIED') throw new Error(`Importación ${entity} falló: ${JSON.stringify(res.body.errors?.slice(0, 3))}`);
+  }
+  await http().put(`/v1/users/${DIRECTOR_SIS['x-actor']}`).send({ display_name: 'Dirección SIS', roles: ['DIRECTOR'], program: 'SIS' }).expect(200);
+  if (opts.consolidate !== false) {
+    await http().post('/v1/offers/consolidate').set(DIRECTOR_SIS).send({ period: '2027-1', notes: 'Oferta revisada' }).expect(201);
   }
 }
 

@@ -2,7 +2,7 @@ import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { Client } from 'pg';
 import { QUEUE_SENDER, QueueSender } from '../src/queue/queue-sender';
-import { createApp, createTestDatabase, describeWithWorker, runWorker, seedScenario } from './helpers';
+import { createApp, createTestDatabase, describeWithWorker, DIRECTOR_SIS, runWorker, seedScenario, STAFF_ROLES } from './helpers';
 
 class CapturingSender implements QueueSender {
   enabled = true;
@@ -14,10 +14,12 @@ class CapturingSender implements QueueSender {
 }
 
 const as = (actor: string, roles: string) => ({ 'x-actor': actor, 'x-roles': roles });
-const COORD = as('ana@unbosque.edu.co', 'COORDINATOR');
-const REVIEWER = as('secretaria@unbosque.edu.co', 'REVIEWER');
-const APPROVER = as('decanatura@unbosque.edu.co', 'APPROVER');
-const PUBLISHER = as('registro@unbosque.edu.co', 'PUBLISHER');
+// Actores (SCRUM-43): el administrador genera, ajusta y publica; el comité táctico evalúa y aprueba
+const COORD = as('ana@unbosque.edu.co', 'ADMINISTRADOR');
+const REVIEWER = as('comite.evaluacion@unbosque.edu.co', 'COMITE_TACTICO');
+const APPROVER = as('decanatura@unbosque.edu.co', 'COMITE_TACTICO');
+const PUBLISHER = as('registro@unbosque.edu.co', 'ADMINISTRADOR');
+const DOCENTE = as('docente.sin.registro@unbosque.edu.co', 'DOCENTE');
 
 describeWithWorker('Gobierno: revisión, aprobación y publicación (SCRUM-31)', () => {
   let app: INestApplication;
@@ -35,7 +37,7 @@ describeWithWorker('Gobierno: revisión, aprobación y publicación (SCRUM-31)',
     app = await createApp(db.url, { DEV_DEFAULT_ROLES: '' }, [{ provide: QUEUE_SENDER, useValue: sender }]);
     pg = new Client({ connectionString: db.url });
     await pg.connect();
-    process.env.DEV_DEFAULT_ROLES = 'ADMIN';
+    process.env.DEV_DEFAULT_ROLES = STAFF_ROLES;
     await seedScenario(app, 'small');
     process.env.DEV_DEFAULT_ROLES = '';
     const res = await http().post('/v1/schedule-requests').set(COORD).send({ period: '2027-1', alternatives_requested: 1, time_limit_seconds: 15 }).expect(202);
@@ -45,17 +47,32 @@ describeWithWorker('Gobierno: revisión, aprobación y publicación (SCRUM-31)',
   }, 120000);
 
   afterAll(async () => {
-    process.env.DEV_DEFAULT_ROLES = 'ADMIN';
+    process.env.DEV_DEFAULT_ROLES = STAFF_ROLES;
     await pg.end();
     await app.close();
     await db.drop();
   });
 
-  it('exige el rol adecuado para cada acción', async () => {
-    const rev = (await latest()).revision.id;
+  it('exige el actor adecuado para cada acción', async () => {
+    const alt = await latest();
+    const rev = alt.revision.id;
+    const a = alt.assignments[0];
     await http().post('/v1/schedule-requests').set(REVIEWER).send({ period: '2027-1' }).expect(403);
+    await http().post('/v1/schedule-requests').set(DIRECTOR_SIS).send({ period: '2027-1' }).expect(403);
     await http().post(`/v1/revisions/${rev}/approvals`).set(COORD).send({}).expect(403);
     await http().post(`/v1/revisions/${rev}/reviews`).set(PUBLISHER).send({ decision: 'SEND_TO_APPROVAL' }).expect(403);
+    await http().post(`/v1/revisions/${rev}/reviews`).set(DIRECTOR_SIS).send({ decision: 'SEND_TO_APPROVAL' }).expect(403);
+    // El ajuste manual (drag-and-drop) es exclusivo del administrador
+    const change = { group: a.group, session: a.session, slot: a.slot, room: a.room };
+    await http().post(`/v1/alternatives/${altId}/preview`).set(REVIEWER).send({ changes: [change] }).expect(403);
+    await http().post(`/v1/alternatives/${altId}/preview`).set(DIRECTOR_SIS).send({ changes: [change] }).expect(403);
+    await http().post(`/v1/alternatives/${altId}/revisions`).set(APPROVER)
+      .send({ base_revision_id: rev, reason: 'No autorizado', changes: [change] }).expect(403);
+    // Docentes y estudiantes no ven borradores ni alternativas
+    await http().get(`/v1/schedule-requests/${requestId}`).set(DOCENTE).expect(403);
+    await http().get(`/v1/alternatives/${altId}`).set(as('estudiante@unbosque.edu.co', 'ESTUDIANTE')).expect(403);
+    // El director sí ve la alternativa (institucional) para priorizar ajustes, en solo lectura
+    await http().get(`/v1/alternatives/${altId}`).set(DIRECTOR_SIS).expect(200);
   });
 
   it('no se aprueba lo que no fue enviado a aprobación', async () => {
@@ -86,7 +103,7 @@ describeWithWorker('Gobierno: revisión, aprobación y publicación (SCRUM-31)',
     expect(alt.revision.created_by).toBe('ana@unbosque.edu.co');
     await http().post(`/v1/revisions/${alt.revision.id}/reviews`).set(REVIEWER).send({ decision: 'SEND_TO_APPROVAL', comment: 'OK' }).expect(201);
     expect(await status()).toBe('PENDING_APPROVAL');
-    const self = await http().post(`/v1/revisions/${alt.revision.id}/approvals`).set(as('ana@unbosque.edu.co', 'APPROVER')).send({}).expect(409);
+    const self = await http().post(`/v1/revisions/${alt.revision.id}/approvals`).set(as('ana@unbosque.edu.co', 'ADMINISTRADOR,COMITE_TACTICO')).send({}).expect(409);
     expect(self.body.message).toContain('no puede aprobarla');
   });
 
